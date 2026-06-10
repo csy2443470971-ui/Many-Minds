@@ -48,3 +48,6 @@ legacy/
 
 # Claude Code 运行时临时文件
 .claude/scheduled_tasks.lock
+
+# 产品官网单独托管，不进 GitHub
+website/
