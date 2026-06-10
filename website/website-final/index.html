@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds v2 — Explore the thoughts you haven't thought yet</title>
+  <meta name="description" content="Many Minds is a place to think with minds unlike your own. Drop in a belief or open question and step into a room of unfamiliar perspectives you'd never reach alone." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700;800;900&display=swap" />
+  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('mm-theme')||'dark')}catch(e){}</script>
+  <style>
+    /* ============================================================
+       Many Minds — product website (standalone, self-contained)
+       Design language mirrors the app: warm dark canvas, gold + purple
+       accents, Inter + Georgia, glassmorphism, three field colors.
+       ============================================================ */
+    :root {
+      --bg: #0e0d15;
+      --text: #f0eeff;
+      --muted: #9490ac;
+      --dim: rgba(244, 236, 226, 0.46);
+      --line: rgba(255, 255, 255, 0.12);
+      --line-soft: rgba(255, 255, 255, 0.07);
+      --card: rgba(32, 30, 40, 0.62);
+      --card-hover: rgba(40, 37, 50, 0.66);
+      --accent: #e8b84e;      /* gold */
+      --accent-2: #8b6ef0;    /* purple */
+      --purple: #b49aff;
+      --gold: #e8b84e;
+      --teal: #4de8b6;
+      --shadow: none;
+      --radius: 22px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f3fb;
+      --text: #20202a;
+      --muted: #5c5876;
+      --dim: rgba(32, 32, 42, 0.5);
+      --line: rgba(0, 0, 0, 0.12);
+      --line-soft: rgba(0, 0, 0, 0.06);
+      --card: rgba(255, 255, 255, 0.72);
+      --card-hover: rgba(255, 255, 255, 0.92);
+      --shadow: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font);
+      font-optical-sizing: auto;
+      line-height: 1.6;
+      background: #352b4c;  /* fallback before .bg-layer paints */
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Real fixed div (not ::before — stacking context from overflow:hidden breaks that).
+       Covers the viewport at all times so every section sees the same hero background. */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      /* Low-saturation: mauve center (#372E3C) → cooler indigo at the edges
+         (#352B4C). No vivid glow — keeps S ≈ 13–28% like the reference. */
+      background:
+        radial-gradient(115% 105% at 50% 32%, #372e3c 0%, #352b4c 100%);
+    }
+    [data-theme="light"] .bg-layer {
+      background:
+        radial-gradient(115% 105% at 50% 32%, #efeef3 0%, #e7e4ee 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font-family: inherit; }
+
+    ::selection { background: rgba(232, 184, 78, 0.3); }
+
+    /* ---------- Navbar ---------- */
+    .navbar {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(1180px, calc(100% - 32px));
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px 0 18px;
+      z-index: 50;
+      border: 1px solid var(--line-soft);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--bg) 62%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav-left { display: flex; align-items: center; gap: 14px; }
+
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 32px; height: 32px;
+      border-radius: 11px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(240, 190, 80, 0.95), rgba(155, 111, 255, 0.9));
+      color: #130f13;
+      font-size: 14px; font-weight: 900;
+      box-shadow: 0 10px 24px rgba(232, 184, 78, 0.16);
+    }
+    .brand-name { font-size: 15px; font-weight: 650; letter-spacing: 0.01em; }
+
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-link {
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13.5px;
+      transition: color 0.16s ease, background 0.16s ease;
+    }
+    .nav-link:hover { color: var(--text); background: var(--line-soft); }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .theme-toggle {
+      display: grid; place-items: center;
+      width: 36px; height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--line-soft);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+    .theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .theme-toggle svg { width: 16px; height: 16px; }
+    .theme-toggle .icon-sun { display: none; }
+    [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+    [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      color: #1a1320;
+      background: var(--accent-2);
+    }
+    .btn-primary:hover { transform: translateY(-2px); background: #9f84f5; }
+    .btn-ghost {
+      color: var(--text);
+      border-color: var(--line);
+      background: var(--line-soft);
+    }
+    .btn-ghost:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .btn-lg { padding: 14px 26px; font-size: 15px; }
+
+    .nav-cta { display: inline-flex; }
+
+    /* ---------- Layout ---------- */
+    section { position: relative; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 800;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 18px;
+    }
+    .eyebrow::before {
+      content: ""; width: 22px; height: 1px;
+      background: var(--accent); opacity: 0.7;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.08; letter-spacing: -0.01em; }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      padding: 168px 0 80px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 56px;
+      align-items: center;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(38px, 5.4vw, 66px);
+      letter-spacing: -0.015em;
+      line-height: 1.02;
+    }
+    .hero h1 .grad {
+      color: var(--accent-2);
+    }
+    .hero-sub {
+      margin: 22px 0 0;
+      max-width: 520px;
+      color: var(--muted);
+      font-size: clamp(16px, 1.7vw, 18.5px);
+      line-height: 1.6;
+    }
+
+    .thought-field {
+      margin-top: 30px;
+      max-width: 520px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      padding: 10px 18px;
+      box-shadow: var(--shadow);
+    }
+    .thought-field .label {
+      font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--dim);
+    }
+    .thought-rotator {
+      height: 56px; overflow: hidden; margin-top: 6px;
+      position: relative;
+    }
+    .thought-track { transition: transform 0.6s cubic-bezier(0.6, 0, 0.2, 1); }
+    .thought-track.no-anim { transition: none; }
+    .thought-track span {
+      display: flex; align-items: center;
+      height: 56px;
+      font-family: var(--serif); font-size: 17px; line-height: 1.35;
+      color: var(--text);
+      white-space: normal;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+
+    .hero-meta {
+      display: flex; gap: 0; flex-wrap: wrap;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .hero-meta .stat {
+      flex: 1; min-width: 80px;
+      padding: 16px 20px;
+      border-right: 1px solid var(--line);
+    }
+    .hero-meta .stat:last-child { border-right: none; }
+    .hero-meta .stat .n {
+      font-family: var(--serif); font-size: 24px; color: var(--text); line-height: 1;
+    }
+    .hero-meta .stat .l { font-size: 11.5px; color: var(--muted); letter-spacing: 0.02em; margin-top: 4px; }
+
+    /* ---------- Hero right column ---------- */
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .hero-img {
+      width: 100%;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--card);
+      aspect-ratio: 4 / 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-img img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    /* Placeholder shown until the real image is uploaded */
+    .hero-img-placeholder {
+      color: var(--muted); font-size: 13px; letter-spacing: 0.04em;
+      text-transform: uppercase; font-weight: 700;
+    }
+    .room-window {
+      position: absolute; top: 13%; left: 50%; transform: translateX(-50%);
+      width: 36%; height: 30%; border-radius: 90px 90px 12px 12px;
+      background: linear-gradient(180deg, rgba(255, 226, 170, 0.5), rgba(255, 200, 130, 0.08));
+      border: 1px solid rgba(255, 220, 160, 0.3);
+      filter: blur(0.3px);
+    }
+    .room-table {
+      position: absolute; left: 50%; top: 60%; transform: translate(-50%, -50%);
+      width: 34%; height: 16%; border-radius: 50%;
+      background: rgba(232, 184, 78, 0.12);
+      border: 1px solid rgba(232, 184, 78, 0.28);
+      box-shadow: 0 0 60px rgba(232, 184, 78, 0.16);
+    }
+    .seat {
+      position: absolute; width: 26px; height: 26px; border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: breathe 5s ease-in-out infinite;
+    }
+    .seat::after {
+      content: ""; position: absolute; inset: -7px; border-radius: 50%;
+      border: 1px solid currentColor; opacity: 0.28;
+    }
+    .seat.you  { background: #f4ece2; color: #f4ece2; }
+    .seat.s1 { background: var(--gold);   color: var(--gold); }
+    .seat.s2 { background: var(--purple); color: var(--purple); }
+    .seat.s3 { background: var(--teal);   color: var(--teal); }
+    .seat.s4 { background: var(--gold);   color: var(--gold); }
+    .seat.s5 { background: var(--purple); color: var(--purple); }
+    .seat-label {
+      position: absolute; left: 50%; top: 130%; transform: translateX(-50%);
+      font-size: 10.5px; font-weight: 700; color: var(--muted);
+      white-space: nowrap; letter-spacing: 0.02em;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.08); }
+    }
+    .bubble {
+      position: absolute; max-width: 150px;
+      padding: 9px 12px; border-radius: 14px;
+      font-family: var(--serif); font-size: 12.5px; line-height: 1.35;
+      color: var(--text);
+      background: var(--card); border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+      opacity: 0; animation: floatIn 0.6s ease forwards;
+    }
+    @keyframes floatIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* ---------- Section scaffolding ---------- */
+    .band { padding: 86px 0; }
+    .band-head { max-width: 680px; margin-bottom: 44px; }
+    .band-head h2 {
+      font-family: var(--serif); font-weight: 500;
+      font-size: clamp(28px, 3.6vw, 44px);
+    }
+    /* :not(.eyebrow) so the eyebrow label keeps its 12px gold style — the
+       generic .band-head p is only for the description paragraph under the h2. */
+    .band-head p:not(.eyebrow) { margin: 16px 0 0; color: var(--muted); font-size: 17px; }
+
+    /* ---------- What / manifesto ---------- */
+    .manifesto {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(22px, 2.4vw, 32px);
+      line-height: 1.55; font-weight: 500;
+      max-width: 920px;
+      letter-spacing: -0.01em;
+    }
+    .manifesto .hl  { color: var(--accent); }
+    .manifesto .hl2 { color: var(--accent-2); }
+
+    /* ---------- Why ---------- */
+    .why-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+      margin-top: 8px;
+    }
+    .why-card {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--card); padding: 26px;
+      backdrop-filter: blur(14px);
+    }
+    .why-card .k {
+      font-family: var(--serif); font-size: 30px; color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .why-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .why-card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+    /* ---------- Features bento ---------- */
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 18px;
+    }
+    .feat {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .feat:hover { transform: translateY(-4px); border-color: var(--accent); background: var(--card-hover); }
+    .feat .tag {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--dim); margin-bottom: 14px;
+    }
+    .feat .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .feat h3 { font-size: 20px; margin-bottom: 9px; font-family: var(--serif); font-weight: 600; }
+    .feat p { margin: 0; color: var(--muted); font-size: 14.5px; }
+    .feat.col-3 { grid-column: span 3; }
+    .feat.col-2 { grid-column: span 2; }
+    .feat.col-4 { grid-column: span 4; }
+    .feat.col-6 { grid-column: span 6; }
+
+    /* venn motif for the matrix feature */
+    .venn { position: relative; height: 120px; margin-bottom: 18px; }
+    .venn span {
+      position: absolute; width: 78px; height: 78px; border-radius: 50%;
+      top: 12px; mix-blend-mode: screen; opacity: 0.85;
+      border: 1px solid;
+    }
+    [data-theme="light"] .venn span { mix-blend-mode: multiply; }
+    .venn .v1 { left: 24px; background: rgba(185, 151, 255, 0.28); border-color: var(--purple); }
+    .venn .v2 { left: 62px; background: rgba(217, 169, 71, 0.26); border-color: var(--gold); }
+    .venn .v3 { left: 43px; top: 44px; background: rgba(99, 240, 189, 0.22); border-color: var(--teal); }
+    .venn small {
+      position: absolute; font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .venn .l1 { left: 6px;  top: 0;   color: var(--purple); }
+    .venn .l2 { right: 6px; top: 0;   color: var(--gold); }
+    .venn .l3 { left: 50%; transform: translateX(-50%); bottom: 0; color: var(--teal); }
+
+    /* bloom motif */
+    .bloom-mini { display: flex; gap: 6px; margin-bottom: 18px; align-items: center; }
+    .bloom-mini i {
+      width: 10px; height: 10px; border-radius: 50%; display: block;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    [data-theme="light"] .bloom-mini i { background: rgba(28, 26, 38, 0.75); }
+    .bloom-mini .line { flex: 1; height: 1px; background: var(--line); }
+
+    /* ---------- How it works — sketch grid ----------
+       Row 1: one full-width card (text left, image right)
+       Row 2: two equal cards (text top, image bottom)
+    -------------------------------------------------------- */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 18px;
+    }
+
+    /* Card 1 spans both columns */
+    .step-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      padding: 28px 32px;
+      overflow: hidden;
+    }
+    .step-card.step-wide {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .step-card.step-tall {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .step-card .num {
+      font-family: var(--serif); font-size: 15px; font-weight: 700;
+      width: 34px; height: 34px; border-radius: 50%;
+      display: grid; place-items: center;
+      border: 1px solid var(--accent); color: var(--accent);
+      margin-bottom: 14px; flex-shrink: 0;
+    }
+    .step-card h3 { font-size: 22px; margin-bottom: 10px; font-family: var(--serif); font-weight: 600; }
+    .step-card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .step-card .step-text { display: flex; flex-direction: column; }
+    .step-card .step-text p { margin-top: 4px; }
+
+    .step-img {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--line-soft);
+    }
+    /* Wide card: image fills its column, matches text height */
+    .step-wide .step-img { height: 100%; min-height: 200px; }
+    /* Tall cards: image has a fixed aspect ratio */
+    .step-tall .step-img { aspect-ratio: 16 / 9; width: 100%; }
+    .step-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* "I want to try" button row */
+    .steps-cta {
+      display: flex;
+      align-items: center;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 900px) {
+      .steps-grid { grid-template-columns: 1fr; }
+      .step-card.step-wide { grid-template-columns: 1fr; }
+      .step-wide .step-img { height: auto; min-height: 180px; aspect-ratio: 16 / 9; }
+    }
+
+    /* ---------- Founder ---------- */
+    .founder {
+      display: grid; grid-template-columns: 280px 1fr; gap: 48px; align-items: center;
+    }
+    .founder-card {
+      border: 1px solid var(--line); border-radius: 26px;
+      background: var(--card); backdrop-filter: blur(14px);
+      padding: 30px; text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .avatar {
+      width: 110px; height: 110px; border-radius: 50%;
+      margin: 0 auto 18px;
+      display: grid; place-items: center;
+      font-family: var(--serif); font-size: 38px; font-weight: 600; color: #1a1320;
+      background: linear-gradient(135deg, #f0be60, #a48cf5);
+    }
+    .founder-card .fname { font-size: 21px; font-weight: 650; }
+    .founder-card .frole { font-size: 13px; color: var(--accent); margin-top: 4px; letter-spacing: 0.02em; }
+    .founder-socials { display: flex; justify-content: center; gap: 10px; margin-top: 18px; }
+    .founder-socials a {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: grid; place-items: center;
+      border: 1px solid var(--line); color: var(--muted);
+      transition: color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    }
+    .founder-socials a:hover { color: var(--text); border-color: var(--accent); transform: translateY(-2px); }
+    .founder-socials svg { width: 16px; height: 16px; }
+
+    .founder-body h2 {
+      font-family: var(--serif); font-weight: 500; font-size: clamp(28px, 3.6vw, 44px);
+      margin-bottom: 18px;
+    }
+    .founder-body p { margin: 0 0 16px; color: var(--muted); font-size: 16px; }
+    .founder-quote {
+      font-family: var(--serif); font-size: 19px; line-height: 1.5;
+      color: var(--text); border-left: 2px solid var(--accent);
+      padding-left: 18px; margin: 22px 0 0;
+    }
+
+    /* ---------- Contact ---------- */
+    .contact {
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background:
+        radial-gradient(120% 140% at 0% 0%, rgba(232, 184, 78, 0.10), transparent 55%),
+        radial-gradient(120% 140% at 100% 100%, rgba(168, 134, 255, 0.12), transparent 55%),
+        var(--card);
+      backdrop-filter: blur(16px);
+      padding: 52px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+      box-shadow: var(--shadow);
+    }
+    .contact h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(28px, 3.6vw, 44px); }
+    .contact p:not(.eyebrow) { color: var(--muted); margin: 16px 0 26px; font-size: 16px; }
+    .contact-direct { display: flex; flex-direction: column; gap: 12px; }
+    .contact-link {
+      display: inline-flex; align-items: center; gap: 12px;
+      font-size: 15px; color: var(--text);
+      transition: color 0.16s ease;
+    }
+    .contact-link:hover { color: var(--accent); }
+    .contact-link .ico {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: grid; place-items: center;
+      border: 1px solid var(--line); background: var(--line-soft);
+      color: var(--accent);
+    }
+    .contact-link .ico svg { width: 17px; height: 17px; }
+    .contact-link small { display: block; color: var(--dim); font-size: 12px; }
+
+    form.contact-form { display: grid; gap: 12px; }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--dim); text-transform: uppercase; }
+    .field input, .field textarea {
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--line-soft); color: var(--text);
+      padding: 11px 13px; font-size: 14.5px; resize: vertical;
+      transition: border-color 0.16s ease;
+    }
+    .field input:focus, .field textarea:focus { outline: 0; border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ---------- Footer ---------- */
+    footer {
+      border-top: 1px solid var(--line-soft);
+      padding: 44px 0 56px; margin-top: 40px;
+    }
+    .foot-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; }
+    .foot-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .foot-links a { color: var(--muted); font-size: 14px; transition: color 0.16s ease; }
+    .foot-links a:hover { color: var(--text); }
+    .foot-copy { color: var(--dim); font-size: 13px; }
+
+    /* ---------- Reveal animation ---------- */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 130px; }
+      .hero-right { max-width: 480px; margin: 0 auto; width: 100%; }
+      .why-grid { grid-template-columns: 1fr; }
+      .feat.col-3, .feat.col-2, .feat.col-4, .feat.col-6 { grid-column: span 6; }
+      .step { grid-template-columns: 1fr; gap: 24px; }
+      .founder { grid-template-columns: 1fr; gap: 28px; }
+      .founder-card { max-width: 320px; margin: 0 auto; }
+      .contact { grid-template-columns: 1fr; padding: 32px; }
+    }
+    @media (max-width: 560px) {
+      .navbar { height: 58px; }
+      .nav-cta { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .hero-meta { gap: 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.12s !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed background layer — keeps hero gradient visible at all scroll depths -->
+  <div class="bg-layer" aria-hidden="true"></div>
+
+  <!-- ============ NAV ============ -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <a class="brand" href="#top">
+        <div class="brand-mark">M</div>
+        <div class="brand-name">Many Minds</div>
+      </a>
+    </div>
+    <div class="nav-links">
+      <a class="nav-link" href="#what">What</a>
+      <a class="nav-link" href="#why">Why</a>
+      <a class="nav-link" href="#founder">Founder</a>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" type="button" aria-label="Toggle theme" id="themeToggle">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+      <a class="btn btn-primary nav-cta" href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <span id="top"></span>
+
+  <!-- ============ HERO ============ -->
+  <header class="wrap hero">
+    <div>
+      <h1 class="reveal">Explore the thoughts you <span class="grad">haven't thought</span> yet.</h1>
+      <p class="hero-sub reveal">What if you could walk into a 20-minute room with five brilliant strangers — and let them inspire you?</p>
+
+      <div class="thought-field reveal">
+        <div class="thought-rotator">
+          <div class="thought-track" id="thoughtTrack">
+            <span>What if Google didn't go IPO? What would the Internet look like today?</span>
+            <span>Nobody can love anyone forever.</span>
+            <span>Should we rapidly expand nuclear power to fight climate change?</span>
+            <span>Language is a cage that shapes what you can think of.</span>
+            <span>What if Google didn't go IPO? What would the Internet look like today?</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-actions reveal">
+        <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
+      </div>
+    </div>
+
+    <!-- Right column: hero image + stats below -->
+    <div class="hero-right reveal">
+      <div class="hero-img">
+        <!-- Replace hero-image.png with your uploaded filename -->
+        <img src="hero-image.png" alt="Many Minds room" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+        <span class="hero-img-placeholder" style="display:none;">Your image goes here</span>
+      </div>
+
+      <div class="hero-meta">
+        <div class="stat"><div class="n">3 – 5</div><div class="l">minds at the table</div></div>
+        <div class="stat"><div class="n">3</div><div class="l">fields of meaning</div></div>
+        <div class="stat"><div class="n">∞</div><div class="l">rooms you can open</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ WHAT ============ -->
+  <section class="band wrap" id="what">
+    <p class="eyebrow reveal">What it is</p>
+    <p class="manifesto reveal">
+      Many Minds is a place to think <span class="hl">with minds unlike your own.</span>
+      Drop in a raw belief. A room of sharp characters gathers —
+      not to nod along, but to <span class="hl2">push, reframe, and reveal</span> what you cannot see yourself. It is
+      <span class="hl2">the opposite of a single answer.</span>
+    </p>
+  </section>
+
+  <!-- ============ HOW ============ -->
+  <section class="band wrap" id="how">
+    <div class="band-head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps, from a single thought to a widening map.</h2>
+    </div>
+    <div class="steps-grid">
+
+      <!-- Row 1: full-width — text left, image right -->
+      <div class="step-card step-wide reveal">
+        <div class="step-text">
+          <div class="num">1</div>
+          <h3>Drop in a thought</h3>
+          <p>A belief, a question, a thing you can't quite resolve. You can even invite your friends to join the conversation together.</p>
+        </div>
+        <div class="step-img">
+          <img src="how-step-1.png" alt="Drop in a thought" loading="lazy" onerror="this.style.display='none'" />
+        </div>
+      </div>
+
+      <!-- Row 2 left: text top, image bottom -->
+      <div class="step-card step-tall reveal">
+        <div class="step-text">
+          <div class="num">2</div>
+          <h3>A room gathers</h3>
+          <p>The right unfamiliar minds are cast and take their seats. You listen, interject, or pull someone aside — the conversation is alive.</p>
+        </div>
+        <div class="step-img">
+          <img src="how-step-2.png" alt="A room gathers" loading="lazy" onerror="this.style.display='none'" />
+        </div>
+      </div>
+
+      <!-- Row 2 right: text top, image bottom -->
+      <div class="step-card step-tall reveal">
+        <div class="step-text">
+          <div class="num">3</div>
+          <h3>Your map grows</h3>
+          <p>Each room becomes a point on your matrix. Bridge them, revisit them, and watch the shape of your own thinking emerge.</p>
+        </div>
+        <div class="step-img">
+          <img src="how-step-3.png" alt="Your map grows" loading="lazy" onerror="this.style.display='none'" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom-left CTA -->
+    <div class="steps-cta reveal">
+      <a class="btn btn-primary btn-lg" href="#contact">I want to try</a>
+    </div>
+  </section>
+
+  <!-- ============ WHY ============ -->
+  <section class="band wrap" id="why">
+    <div class="band-head reveal">
+      <p class="eyebrow">Why it exists</p>
+      <h2>Most tools make you more sure. <span style="white-space:nowrap">We want to make you more curious.</span></h2>
+      <p>But why is this hard?</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="k">01</div>
+        <h3>Algorithmic Comfort Zone</h3>
+        <p>Algorithms of social media are designed to keep us comfortable. As The Social Dilemma showed, they feed you what you already believe, quietly shrinking your worldview.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="k">02</div>
+        <h3>Harmful Certainty by AI</h3>
+        <p>By keeping discussions safely within the boundaries you set, most AI tools mistake a narrow debate for clear thinking.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="k">03</div>
+        <h3>Intellectual Desert</h3>
+        <p>We are more connected than ever, yet intellectually alone. In a busy society built for quick entertainment, we are too distracted to find rare, sharp conversations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section class="band wrap" id="features">
+    <div class="band-head reveal">
+      <p class="eyebrow">What's inside</p>
+      <h2>A room of perspectives — and a map of your own mind.</h2>
+      <p>Every part of Many Minds is built around one move: meeting a thought with the minds most likely to change it.</p>
+    </div>
+
+    <div class="bento">
+      <article class="feat col-3 reveal">
+        <div class="tag"><span class="dot" style="background:var(--gold)"></span>The Room</div>
+        <h3>Step into a room of unfamiliar minds</h3>
+        <p>Five distinct characters — each with their own stakes, history, and way of seeing — gather around your thought in a warm, living conversation. Listen in, call a character forward, or pull one aside to talk privately.</p>
+      </article>
+
+      <article class="feat col-3 reveal">
+        <div class="tag"><span class="dot" style="background:var(--purple)"></span>Character Composer</div>
+        <h3>Cast for tension, not agreement</h3>
+        <p>A composing engine reads your thought across its axes and intent, then casts the room for productive friction — the minds most likely to disagree in a way that opens something, never a chorus that nods along.</p>
+      </article>
+
+      <article class="feat col-2 reveal">
+        <div class="venn" aria-hidden="true">
+          <span class="v1"></span><span class="v2"></span><span class="v3"></span>
+          <small class="l1">Meta</small><small class="l2">Physical</small><small class="l3">Psych</small>
+        </div>
+        <div class="tag"><span class="dot" style="background:var(--teal)"></span>Room Matrix</div>
+        <h3>A map of how you think</h3>
+        <p>Every conversation becomes a point across three fields of meaning. Watch your thinking take shape.</p>
+      </article>
+
+      <article class="feat col-2 reveal">
+        <div class="bloom-mini" aria-hidden="true"><i></i><span class="line"></span><i></i><span class="line"></span><i></i></div>
+        <div class="tag"><span class="dot" style="background:var(--gold)"></span>Bridge Composer</div>
+        <h3>Connect protential keywords, open a new door</h3>
+        <p>Let a room's keywords bloom, then bridge two of them to generate a question — and a brand-new room — you'd never have asked on your own.</p>
+      </article>
+
+      <article class="feat col-2 reveal">
+        <div class="tag"><span class="dot" style="background:var(--purple)"></span>Me</div>
+        <h3>A soft worldview memory</h3>
+        <p>A gentle record of how you've been making meaning across rooms — what opens you, what creates friction, and the questions worth carrying. Traceable, never a fixed identity.</p>
+      </article>
+
+      <article class="feat col-3 reveal">
+        <div class="tag"><span class="dot" style="background:var(--teal)"></span>Invite a Friend</div>
+        <h3>Invite a friend to think together</h3>
+        <p>Share a link and step into the same room with someone you trust. Afterward, compare how each of you framed the very same question — and see what the other one saw.</p>
+      </article>
+
+      <article class="feat col-3 reveal">
+        <div class="tag"><span class="dot" style="background:var(--gold)"></span>Community</div>
+        <h3>An intellectual community</h3>
+        <p>Discover the conversations other minds have opened, follow the threads that resonate, and let someone else's question become your next doorway.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ FOUNDER ============ -->
+  <section class="band wrap" id="founder">
+    <div class="founder">
+      <div class="founder-card reveal">
+        <div class="avatar">S</div>
+        <div class="fname">Sienna</div>
+        <div class="frole">Founder &amp; Builder, Many Minds</div>
+        <div class="founder-socials">
+          <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56z"/></svg></a>
+          <a href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="0.9" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <div class="founder-body reveal">
+        <h2>Hi, I'm Sienna.</h2>
+        <p>I sometimes sound so sure, yet I'm totally blind to my own gaps. Today's algorithms and LLMs only feed that certainty, burying what we don't know we don't know. For me, real inspiration and critical thinking happened when I talked to someone smart and unexpected. But those moments were rare luck. So Many Minds is my attempt to make that encounter something you can simply walk into.</p>
+        <p>I build at the intersection of MultiLLMs, design, and the small philosophy of how people actually change their minds. My north star is: not to give people answers, but to give them the minds they're missing.</p>
+        <p class="founder-quote">"The goal was never a smarter assistant. It was a room you leave thinking something you couldn't have thought before you walked in."</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="band wrap" id="contact">
+    <div class="contact reveal">
+      <div>
+        <p class="eyebrow">Get in touch</p>
+        <h2>Let's open a room together.</h2>
+        <p>Want early access, collaborate, or fund me?<br>Reach out and let's talk.</p>
+        <div class="contact-direct">
+          <a class="contact-link" href="mailto:csy2443470971@gmail.com">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>
+            <span>csy2443470971@gmail.com<small>Email</small></span>
+          </a>
+          <a class="contact-link" href="tel:+12019087028">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.89.67 2.77a2 2 0 0 1-.45 2.11L8.09 9.84a16 16 0 0 0 6.07 6.07l1.24-1.24a2 2 0 0 1 2.11-.45c.88.32 1.81.54 2.77.67A2 2 0 0 1 22 16.92z"/></svg></span>
+            <span>2019087028<small>Phone</small></span>
+          </a>
+        </div>
+      </div>
+
+      <form class="contact-form" id="contactForm">
+        <div class="field">
+          <label for="cf-name">Name</label>
+          <input id="cf-name" name="name" type="text" placeholder="Your name" required />
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input id="cf-email" name="email" type="email" placeholder="you@email.com" required />
+          </div>
+          <div class="field">
+            <label for="cf-topic">Topic</label>
+            <input id="cf-topic" name="topic" type="text" placeholder="Early access, idea…" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="cf-msg">Message</label>
+          <textarea id="cf-msg" name="message" rows="4" placeholder="A thought you'd bring into a room…" required></textarea>
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit" style="justify-content:center;">Send message</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="wrap">
+    <div class="foot-inner">
+      <a class="brand" href="#top">
+        <div class="brand-mark">M</div>
+        <div class="brand-name">Many Minds</div>
+      </a>
+      <div class="foot-links">
+        <a href="#what">What</a>
+        <a href="#why">Why</a>
+        <a href="#founder">Founder</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="foot-copy">© 2026 Many Minds · Think with minds unlike your own.</div>
+    </div>
+  </footer>
+
+  <script>
+    /* ----- theme toggle (shares the app's mm-theme key) ----- */
+    const root = document.documentElement;
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('mm-theme', next); } catch (e) {}
+    });
+
+    /* ----- rotating thought examples ----- */
+    (function () {
+      const track = document.getElementById('thoughtTrack');
+      const step = 56, total = 4;
+      let i = 0;
+      setInterval(() => {
+        i += 1;
+        track.classList.remove('no-anim');
+        track.style.transform = `translateY(-${i * step}px)`;
+        if (i === total) {
+          setTimeout(() => {
+            i = 0;
+            track.classList.add('no-anim');
+            track.style.transform = 'translateY(0)';
+            track.getBoundingClientRect();
+            requestAnimationFrame(() => track.classList.remove('no-anim'));
+          }, 620);
+        }
+      }, 3200);
+    })();
+
+    /* ----- scroll reveal ----- */
+    (function () {
+      const els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) { els.forEach(e => e.classList.add('in')); return; }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      els.forEach((el, idx) => { el.style.transitionDelay = (idx % 4) * 60 + 'ms'; io.observe(el); });
+    })();
+
+    /* ----- contact form -> mailto (no backend) ----- */
+    document.getElementById('contactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const subject = encodeURIComponent('[Many Minds] ' + (f.topic.value || 'Hello') + ' — ' + f.name.value);
+      const body = encodeURIComponent(f.message.value + '\n\n— ' + f.name.value + ' (' + f.email.value + ')');
+      window.location.href = `mailto:csy2443470971@gmail.com?subject=${subject}&body=${body}`;
+    });
+  </script>
+</body>
+</html>

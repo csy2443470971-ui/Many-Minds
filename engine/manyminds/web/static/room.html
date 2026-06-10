@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds · Room</title>
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/room.css" />
+</head>
+<body>
+  <div class="experience-screen" id="experienceScreen">
+<div class="experience-image"></div>
+  <div class="experience-overlay"></div>
+  <button class="back-button" aria-label="Back to landing">←</button>
+  <div class="live-status"><span class="live-dot"></span><span id="liveStatusText">Live</span></div>
+
+  <div class="name-label human" style="left: 27.1%; top: 36.4%;">Me</div>
+  <div class="name-label human invite-only is-hidden" style="left: 50.8%; top: 55.8%;">Friend</div>
+  <div class="name-label ai" style="left: 35.2%; top: 23.4%;">Zi Yu</div>
+  <div class="name-label ai" style="left: 46.4%; top: 23.4%;">Emma</div>
+  <div class="name-label ai" style="left: 58.4%; top: 25.7%;">Luke</div>
+  <div class="name-label ai" style="left: 39.8%; top: 52.1%;">Mark</div>
+  <div class="name-label ai" style="left: 67.4%; top: 45.7%;">Alex</div>
+
+  <button class="character-hotspot" data-character="Zi Yu" style="left: 34.5%; top: 38%;"></button>
+  <button class="character-hotspot" data-character="Emma" style="left: 44%; top: 35%;"></button>
+  <button class="character-hotspot" data-character="Luke" style="left: 55.5%; top: 39%;"></button>
+  <button class="character-hotspot" data-character="Mark" style="left: 38%; top: 62%;"></button>
+  <button class="character-hotspot" data-character="Alex" style="left: 64%; top: 58%;"></button>
+
+  <div class="speech-layer" id="speechLayer"></div>
+
+  <div class="profile-card" id="profileCard">
+    <h3 id="profileName">Luke</h3>
+    <div class="profile-age" id="profileAge">Room host</div>
+    <div class="host-badge" id="hostBadge">Host</div>
+    <ul id="profileBullets">
+      <li>History professor</li>
+      <li>Recently poured tea</li>
+    </ul>
+    <div class="profile-mood" id="profileMood">Watching how people define the question.</div>
+
+    <div class="profile-actions">
+      <button class="profile-action primary" id="callCharacterButton">Call into conversation</button>
+      <button class="profile-action" id="privateConversationButton">Talk privately</button>
+    </div>
+  </div>
+
+  <aside class="history-panel" id="historyPanel">
+    <div class="history-header">
+      <h3>Conversation History</h3>
+      <button class="history-toggle" id="historyToggle" aria-label="Toggle conversation history">−</button>
+    </div>
+    <div class="history-content" id="roomLog">
+      <div class="history-item"><strong>Room:</strong> The conversation will appear here.</div>
+    </div>
+  </aside>
+
+  <button class="compare-button invite-only is-hidden" id="compareButton">Compare our framings</button>
+  <button class="rest-button" id="restButton">Call for a break</button>
+
+  <!-- §3d: the single affordance for a turn addressed to the user. Hidden
+       until a character turns to you; clicking it lets the room continue. -->
+  <button class="ignore-button" id="ignoreButton" type="button"
+          aria-label="Ignore this question and let the room continue">Ignore</button>
+
+  <div class="user-input-card" id="userInputCard">
+    <div class="uic-label">Your thought</div>
+    <div class="uic-text" id="userInputText">…</div>
+  </div>
+
+  <div class="input-bar">
+    <textarea class="room-input" id="roomInput" wrap="off" placeholder="Think privately, or tell the room you have something to say."></textarea>
+    <button class="floor-button" id="floorButton">I have something to say</button>
+    <button class="send-button" id="sendButton">Send</button>
+  </div>
+  </div>
+  <script src="js/room.js"></script>
+</body>
+</html>

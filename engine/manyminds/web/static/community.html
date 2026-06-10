@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds · Community</title>
+  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('mm-theme')||'dark')}catch(e){}</script>
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/community.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <a class="brand" href="index.html">
+        <div class="brand-mark">M</div>
+        <div class="brand-name">Many Minds</div>
+      </a>
+      <button class="theme-toggle" type="button" aria-label="Switch to light theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+      </button>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item " href="index.html">Home</a>
+      <a class="nav-item " href="minds-matrix.html">My Room Matrix</a>
+      <a class="nav-item " href="me.html">Me</a>
+      <a class="nav-item active" href="community.html">Community</a>
+    </div>
+  </nav>
+
+  <main class="content-page community-page">
+    <div class="community-layout">
+      <section class="community-main">
+        <div class="feed-filter" id="feedFilter"></div>
+        <div class="community-feed" id="communityFeed"></div>
+      </section>
+      <aside class="community-sidebar">
+        <div class="card side-card relay-widget" id="relayBand"></div>
+        <div class="card side-card" id="sideInvites"></div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="js/community.js"></script>
+  <script src="js/theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds · Calling the room</title>
+  <link rel="stylesheet" href="css/shared.css" />
+  <style>
+    /* Self-contained buffer flow: room choice while composer starts, then
+       selected-room background with staged profile-card arrivals. */
+
+    :root {
+      --bf-text: #f4ece2;
+      --bf-muted: rgba(244, 236, 226, 0.66);
+      --bf-dim: rgba(244, 236, 226, 0.42);
+      --bf-gold: #d8a85f;
+      --bf-purple: #a886ff;
+      --bf-green: #9fe6b0;
+      --bf-amber-soft: rgba(216, 168, 95, 0.16);
+      --bf-green-soft: rgba(159, 230, 176, 0.14);
+      --bf-surface: rgba(13, 10, 13, 0.76);
+      --bf-surface-strong: rgba(16, 11, 14, 0.90);
+      --bf-line: rgba(244, 236, 226, 0.14);
+      --bf-line-strong: rgba(216, 168, 95, 0.34);
+      --bf-radius: 8px;
+      --bf-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+      --bf-serif: "Fraunces", Georgia, "Times New Roman", serif;
+      --bf-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --selected-room-image: url('assets/pixel-room-reference.png');
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #0a080a;
+      color: var(--bf-text);
+      font-family: var(--bf-sans);
+      overflow: hidden;
+    }
+
+    .buffer-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(216, 168, 95, 0.14), transparent 42%),
+        radial-gradient(circle at 84% 16%, rgba(168, 134, 255, 0.12), transparent 46%),
+        linear-gradient(to bottom, rgba(8, 6, 10, 0.62), rgba(8, 6, 10, 0.86)),
+        url('assets/pixel-room-reference.png') center/cover no-repeat;
+      filter: blur(14px) brightness(0.46) saturate(0.92);
+      transform: scale(1.08); /* hide blur edges */
+      transition: filter 0.8s ease, transform 0.8s ease, background 0.8s ease;
+    }
+
+    body.room-selected .buffer-bg {
+      background:
+        radial-gradient(circle at 50% 28%, rgba(0, 0, 0, 0.20), rgba(0, 0, 0, 0.68) 72%),
+        linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.58)),
+        var(--selected-room-image) center/cover no-repeat;
+      filter: none;
+      transform: scale(1.01);
+    }
+
+    /* Soft vignette so the centered content reads against the photo. */
+    .buffer-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 38%, rgba(5, 4, 7, 0.68) 100%);
+    }
+
+    .buffer-content {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .buffer-stage {
+      width: min(1120px, 100%);
+      display: none;
+    }
+
+    .buffer-stage.active {
+      display: block;
+      animation: bf-stage-in 0.55s cubic-bezier(.2,.7,.3,1);
+    }
+
+    @keyframes bf-stage-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .title-dots {
+      display: inline-flex;
+      gap: 5px;
+      margin-left: 0.3rem;
+      color: var(--bf-gold);
+      vertical-align: 0.12em;
+    }
+    .title-dots i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.35;
+      animation: bf-pulse 1.4s ease-in-out infinite;
+    }
+    .title-dots i:nth-child(2) { animation-delay: 0.2s; }
+    .title-dots i:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bf-pulse {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-2px); }
+    }
+
+    .buffer-title {
+      font-family: var(--bf-serif);
+      font-size: clamp(1.65rem, 3.2vw, 2.45rem);
+      font-weight: 500;
+      line-height: 1.1;
+      margin: 0 auto 0.85rem;
+      max-width: min(92vw, 820px);
+      letter-spacing: -0.005em;
+      white-space: nowrap;
+    }
+
+    .buffer-subtitle {
+      font-size: 0.92rem;
+      color: rgba(244, 236, 226, 0.62);
+      margin: 0 auto 4rem;
+      max-width: 42ch;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .room-picker-title {
+      margin-bottom: 0.75rem;
+    }
+
+    .room-picker-grid {
+      width: min(940px, 94vw);
+      margin: 2.4rem auto 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.1rem;
+    }
+
+    .room-option {
+      position: relative;
+      min-height: 208px;
+      border: 1px solid var(--bf-line);
+      border-radius: var(--bf-radius);
+      overflow: hidden;
+      background: var(--bf-surface);
+      color: var(--bf-text);
+      box-shadow: var(--bf-shadow);
+      transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      text-align: left;
+    }
+
+    .room-option:hover,
+    .room-option:focus-within {
+      border-color: rgba(216, 168, 95, 0.58);
+      transform: translateY(-2px);
+      box-shadow: 0 28px 84px rgba(0, 0, 0, 0.50);
+    }
+
+    .room-option::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--room-image) center/cover no-repeat;
+      transition: transform 0.5s ease, filter 0.2s ease;
+    }
+
+    .room-option:hover::before,
+    .room-option:focus-within::before {
+      transform: scale(1.04);
+      filter: saturate(1.08);
+    }
+
+    .room-option::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.14) 64%),
+        linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08));
+    }
+
+    .room-option-main {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .room-option-main:focus-visible,
+    .room-zoom-button:focus-visible,
+    .room-change-button:focus-visible,
+    .room-panel-close:focus-visible,
+    .preview-close:focus-visible,
+    .preview-use:focus-visible {
+      outline: 2px solid rgba(244, 236, 226, 0.82);
+      outline-offset: 3px;
+    }
+
+    .room-zoom-button {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      z-index: 3;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--bf-line);
+      border-radius: 50%;
+      background: rgba(9, 7, 10, 0.64);
+      color: rgba(244, 236, 226, 0.92);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .room-zoom-button:hover {
+      border-color: rgba(216, 168, 95, 0.62);
+      background: var(--bf-surface-strong);
+      transform: scale(1.04);
+    }
+
+    .room-zoom-button svg,
+    .room-change-button svg,
+    .room-panel-close svg,
+    .preview-close svg {
+      width: 15px;
+      height: 15px;
+      display: block;
+      stroke-width: 2.2;
+    }
+
+    .room-option-content {
+      position: absolute;
+      inset: auto 0 0;
+      z-index: 1;
+      padding: 1rem;
+    }
+
+    .room-option-name {
+      display: block;
+      font-family: var(--bf-serif);
+      font-size: 1.22rem;
+      font-weight: 600;
+      line-height: 1.12;
+      color: rgba(244, 236, 226, 0.98);
+    }
+
+    .room-option-vibe {
+      display: block;
+      margin-top: 0.32rem;
+      font-size: 0.76rem;
+      color: rgba(244, 236, 226, 0.66);
+      line-height: 1.35;
+    }
+
+    .calling-room-tools {
+      display: none;
+      justify-content: center;
+      margin: 0;
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 18;
+    }
+
+    body.room-selected .calling-room-tools {
+      display: flex;
+    }
+
+    .room-change-button,
+    .room-panel-close,
+    .preview-close,
+    .preview-use {
+      border: 1px solid var(--bf-line);
+      border-radius: 999px;
+      background: var(--bf-surface);
+      color: rgba(244, 236, 226, 0.88);
+      backdrop-filter: blur(14px);
+      cursor: pointer;
+    }
+
+    .room-change-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.48rem;
+      height: 34px;
+      padding: 0 0.82rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .room-switch-panel {
+      position: absolute;
+      top: calc(100% + 0.72rem);
+      left: 50%;
+      width: min(720px, 92vw);
+      padding: 0.8rem;
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.7rem;
+      transform: translateX(-50%);
+      border: 1px solid var(--bf-line);
+      border-radius: var(--bf-radius);
+      background: rgba(8, 6, 9, 0.88);
+      box-shadow: var(--bf-shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .room-switch-panel.open {
+      display: grid;
+    }
+
+    .room-switch-panel .room-option {
+      min-height: 104px;
+      box-shadow: none;
+    }
+
+    .room-switch-panel .room-option-name {
+      font-size: 0.96rem;
+    }
+
+    .room-switch-panel .room-option-vibe {
+      display: none;
+    }
+
+    .room-option.selected {
+      border-color: rgba(159, 230, 176, 0.62);
+      box-shadow: 0 0 0 1px rgba(159, 230, 176, 0.14), var(--bf-shadow);
+    }
+
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(10px);
+    }
+
+    .preview-modal.open {
+      display: flex;
+    }
+
+    .preview-dialog {
+      width: min(1120px, 94vw);
+      position: relative;
+    }
+
+    .preview-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--bf-radius);
+      border: 1px solid var(--bf-line);
+      background: var(--preview-room-image) center/cover no-repeat;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62);
+    }
+
+    .preview-actions {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      display: flex;
+      gap: 0.55rem;
+    }
+
+    .preview-close,
+    .preview-use {
+      min-height: 36px;
+      padding: 0 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.44rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .preview-use {
+      border-color: rgba(216, 168, 95, 0.68);
+      background: rgba(216, 168, 95, 0.2);
+      color: rgba(255, 235, 198, 0.98);
+    }
+
+    .buffer-cards {
+      display: inline-flex;
+      gap: 0.82rem;
+      align-items: flex-start;
+      justify-content: center;
+      width: auto;
+      max-width: min(1120px, 100%);
+      margin: 0 auto;
+      transition: width 0.45s cubic-bezier(.2,.7,.3,1);
+    }
+
+    .buffer-card-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.72rem;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.7s cubic-bezier(.2,.7,.3,1),
+                  transform 0.7s cubic-bezier(.2,.7,.3,1);
+    }
+
+    .buffer-card-wrapper.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .buffer-card-label {
+      min-height: 27px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42rem;
+      padding: 0.32rem 0.62rem;
+      border: 1px solid rgba(216, 168, 95, 0.44);
+      border-radius: 999px;
+      background: rgba(216, 168, 95, 0.13);
+      color: rgba(255, 219, 155, 0.92);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22),
+                  0 0 22px rgba(216, 168, 95, 0.12);
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      animation: bf-calling-breathe 1.8s ease-in-out infinite;
+    }
+
+    .buffer-card-label::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(216, 168, 95, 0.12);
+      animation: bf-status-pulse 1.05s ease-in-out infinite;
+    }
+
+    .buffer-card-wrapper.here .buffer-card-label {
+      border-color: rgba(159, 230, 176, 0.42);
+      background: rgba(159, 230, 176, 0.13);
+      color: rgba(197, 245, 208, 0.96);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22),
+                  0 0 18px rgba(159, 230, 176, 0.10);
+      animation: none;
+    }
+
+    .buffer-card-wrapper.here .buffer-card-label::before {
+      box-shadow: 0 0 0 4px rgba(159, 230, 176, 0.13);
+      animation: none;
+    }
+
+    @keyframes bf-status-pulse {
+      0%, 100% { opacity: 0.55; transform: scale(0.88); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes bf-calling-breathe {
+      0%, 100% {
+        transform: translateY(0);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22),
+                    0 0 18px rgba(216, 168, 95, 0.10);
+      }
+      50% {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26),
+                    0 0 30px rgba(216, 168, 95, 0.24);
+      }
+    }
+
+    .buffer-card {
+      position: relative;
+      width: 192px;
+      height: 252px;
+      background:
+        linear-gradient(180deg, rgba(255, 242, 219, 0.035), rgba(255, 242, 219, 0) 42%),
+        rgba(12, 9, 10, 0.90);
+      border: 1px solid rgba(244, 236, 226, 0.13);
+      border-radius: var(--bf-radius);
+      box-shadow: 0 28px 76px rgba(0, 0, 0, 0.46);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 1.38rem 1rem 1.05rem;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .buffer-card::before {
+      content: attr(data-initial);
+      position: absolute;
+      top: 0.66rem;
+      right: 0.72rem;
+      font-family: var(--bf-sans);
+      font-size: 3.4rem;
+      font-weight: 700;
+      line-height: 1;
+      color: rgba(244, 188, 98, 0.035);
+      pointer-events: none;
+    }
+
+    .buffer-card-wrapper.here .buffer-card {
+      border-color: rgba(159, 230, 176, 0.34);
+      box-shadow: 0 24px 72px rgba(0, 0, 0, 0.44),
+                  0 0 0 1px rgba(159, 230, 176, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .buffer-card-head {
+      position: relative;
+      z-index: 1;
+      min-height: 102px;
+      padding: 0.08rem 0 0.72rem;
+    }
+
+    .buffer-card-head::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(216, 168, 95, 0.42), rgba(244, 236, 226, 0.08), transparent);
+    }
+
+    .buffer-card-name {
+      position: relative;
+      z-index: 1;
+      font-family: var(--bf-sans);
+      font-size: 1.02rem;
+      font-weight: 720;
+      color: rgba(244, 214, 166, 0.96);
+      letter-spacing: 0;
+      line-height: 1.12;
+      transition: color 0.5s ease;
+    }
+    .buffer-card-role {
+      position: relative;
+      z-index: 1;
+      margin-top: 0.56rem;
+      max-width: 18ch;
+      color: rgba(244, 236, 226, 0.62);
+      font-size: 0.69rem;
+      font-weight: 610;
+      letter-spacing: 0;
+      line-height: 1.42;
+      text-transform: none;
+      transition: color 0.5s ease;
+    }
+    .buffer-card-wrapper.here .buffer-card-name {
+      color: rgba(244, 214, 166, 0.98);
+    }
+    .buffer-card-wrapper.here .buffer-card-role {
+      color: rgba(229, 245, 232, 0.78);
+    }
+
+    .buffer-card-body {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: 1.02rem 0 0;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .buffer-card-bullets {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      align-content: start;
+      gap: 0.62rem;
+      list-style: none;
+      color: rgba(244, 236, 226, 0.76);
+      font-size: 0.72rem;
+      font-weight: 520;
+      line-height: 1.46;
+    }
+
+    .buffer-card-bullets li {
+      position: relative;
+      display: grid;
+      grid-template-columns: 0.54rem 1fr;
+      column-gap: 0.32rem;
+      align-items: start;
+    }
+
+    .buffer-card-bullets li::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      margin-top: 0.58em;
+      border-radius: 50%;
+      background: rgba(216, 168, 95, 0.90);
+      box-shadow: 0 0 0 3px rgba(216, 168, 95, 0.08);
+    }
+
+    .buffer-card-wrapper.here .buffer-card-bullets {
+      color: rgba(244, 236, 226, 0.84);
+    }
+
+    .buffer-card-wrapper.here .buffer-card-bullets li::before {
+      background: rgba(159, 230, 176, 0.92);
+      box-shadow: 0 0 0 3px rgba(159, 230, 176, 0.08);
+    }
+
+    /* Progress line under the cards — "N of 5 minds here". */
+    .buffer-progress {
+      margin-top: 2.6rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(244, 236, 226, 0.42);
+      transition: color 0.5s ease;
+      min-height: 1.3rem; /* prevent layout shift between empty + filled */
+    }
+    .buffer-progress.ready {
+      color: var(--bf-green);
+    }
+
+    .enter-room-wrap {
+      margin-top: 1.45rem;
+      min-height: 46px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .enter-room-button {
+      min-width: 174px;
+      height: 44px;
+      padding: 0 1.25rem;
+      border: 1px solid rgba(216, 168, 95, 0.58);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(242, 199, 120, 0.96), rgba(216, 168, 95, 0.90));
+      color: #17100d;
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34),
+                  0 0 30px rgba(216, 168, 95, 0.18);
+      font-size: 0.86rem;
+      font-weight: 850;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 0.32s ease, transform 0.32s ease, box-shadow 0.18s ease;
+    }
+
+    .enter-room-button.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .enter-room-button:hover,
+    .enter-room-button:focus-visible {
+      box-shadow: 0 20px 52px rgba(0, 0, 0, 0.40),
+                  0 0 38px rgba(216, 168, 95, 0.28);
+      outline: 0;
+    }
+
+    /* Structured error state — shown on composer hard-fail (after retry)
+       or network failure. Replaces the cards container in-place. */
+    .buffer-error {
+      max-width: 460px;
+      background: rgba(248, 244, 238, 0.97);
+      color: #1a1a1a;
+      padding: 1.7rem 1.9rem;
+      border-radius: 16px;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.4);
+      line-height: 1.55;
+      text-align: left;
+    }
+    .buffer-error h3 {
+      margin: 0 0 0.6rem;
+      font-family: var(--bf-serif);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .buffer-error p {
+      margin: 0.4rem 0;
+      font-size: 0.95rem;
+    }
+    .buffer-error a {
+      color: #6a4f1f;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 940px) {
+      .buffer-content {
+        justify-content: flex-start;
+        padding-top: 4rem;
+        overflow-y: auto;
+      }
+
+      .buffer-title {
+        white-space: normal;
+      }
+
+      .buffer-cards {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .room-switch-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .calling-room-tools {
+        top: 18px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .room-picker-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .room-option {
+        min-height: 186px;
+      }
+
+      .buffer-card {
+        width: min(204px, 76vw);
+        height: 252px;
+      }
+      .buffer-subtitle { margin-bottom: 3.2rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .title-dots i,
+      .buffer-card-label,
+      .buffer-card-label::before { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="buffer-bg"></div>
+  <div class="buffer-content">
+    <section class="buffer-stage active" id="roomPickerStage" aria-labelledby="roomPickerTitle">
+      <h1 class="buffer-title room-picker-title" id="roomPickerTitle">Which place vibes with you?</h1>
+      <div class="room-picker-grid" id="roomPickerGrid"></div>
+    </section>
+
+    <section class="buffer-stage" id="callingStage" aria-labelledby="bufferTitle">
+      <h1 class="buffer-title" id="bufferTitle">Hold on, let me call those smart brains<span class="title-dots" aria-hidden="true"><i></i><i></i><i></i></span></h1>
+      <p class="buffer-subtitle" id="bufferSubtitle">Let's get them to the room</p>
+      <div class="buffer-cards" id="bufferCards"></div>
+      <div class="buffer-progress" id="bufferProgress"></div>
+      <div class="enter-room-wrap">
+        <button class="enter-room-button" type="button" id="enterRoomButton">Enter the room</button>
+      </div>
+    </section>
+  </div>
+  <div class="calling-room-tools">
+    <button class="room-change-button" type="button" id="roomChangeButton" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.4 5.6L21 8"/><path d="M21 3v5h-5"/></svg>
+      Change room
+    </button>
+    <div class="room-switch-panel" id="roomSwitchPanel"></div>
+  </div>
+  <div class="preview-modal" id="roomPreviewModal" aria-hidden="true">
+    <div class="preview-dialog" role="dialog" aria-modal="true" aria-label="Room preview">
+      <div class="preview-image" id="roomPreviewImage"></div>
+      <div class="preview-actions">
+        <button class="preview-use" type="button" id="previewUseButton">Use this room</button>
+        <button class="preview-close" type="button" id="previewCloseButton" aria-label="Close preview">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <script src="js/buffer.js"></script>
+</body>
+</html>

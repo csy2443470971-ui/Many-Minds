@@ -1,0 +1,50 @@
+# ============================================================
+#  Many Minds — .gitignore
+#  这个文件决定「什么永远不会上传到 GitHub」。
+#  设好一次，以后自动分流，不用每次操心。
+# ============================================================
+
+# ---- 🔑 密钥 / 机密（最重要，绝不能上传）----
+.env
+.env.*
+*.key
+*.pem
+
+# ---- 🐍 Python 运行环境 & 缓存（体积大、可重建）----
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# ---- 🗑️ 系统垃圾文件 ----
+.DS_Store
+Thumbs.db
+
+# ---- 📊 运行时产生的数据（不是源代码）----
+logs/
+engine/runs/
+engine/observations/
+
+# ---- 📝 个人笔记 / 规划文档（留在本地，不进 GitHub）----
+# 想让任何文件「永不上传」，把它丢进 _local-notes/ 文件夹即可。
+_local-notes/
+*.xlsx
+GitHub日常更新备忘.md
+
+# 根目录的规划文档
+COMMUNITY-PLAN.md
+COMMUNITY-SPEC.md
+engine_architecture_current.md
+
+# engine/ 里的工作笔记
+engine/HANDOFF.md
+engine/roadmap-knowledge-layer-session.md
+engine/turn-pipeline-architecture.md
+engine/movement_realflow_exemplars.md
+
+# ---- 🗂️ 已废弃的旧代码 ----
+legacy/
+
+# Claude Code 运行时临时文件
+.claude/scheduled_tasks.lock

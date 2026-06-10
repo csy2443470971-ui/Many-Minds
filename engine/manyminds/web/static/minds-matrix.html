@@ -1,0 +1,3158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds - Your room matrix</title>
+  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('mm-theme')||'dark')}catch(e){}</script>
+  <link rel="stylesheet" href="css/shared.css" />
+  <style>
+    :root {
+      --atlas-bg: #050505;
+      --atlas-text: #f4ece2;
+      --atlas-muted: rgba(244, 236, 226, 0.66);
+      --atlas-dim: rgba(244, 236, 226, 0.42);
+      --atlas-panel: rgba(16, 13, 18, 0.74);
+      --atlas-line: rgba(255, 255, 255, 0.14);
+      --purple: #b997ff;
+      --gold: #d9a947;
+      --teal: #63f0bd;
+      --page-zoom: 0.9;
+      --page-zoom-resting: 0.882;
+      --node-font-comp: 1.111;
+
+      /* Theme surfaces (dark defaults) */
+      --shell-fill: #1c1c1c;
+      --grid-line: rgba(168, 158, 178, 0.05);
+      --shell-border: rgba(244, 236, 226, 0.1);
+      --bloom-line: rgba(244, 236, 226, 0.34);
+      --fs-bg: #1c1c1c;
+      --ctrl-bg: rgba(255, 255, 255, 0.04);
+      --ctrl-bg-hover: rgba(255, 255, 255, 0.085);
+      --ctrl-border: rgba(255, 255, 255, 0.14);
+      --ctrl-border-hover: rgba(244, 236, 226, 0.34);
+      --ctrl-text: rgba(244, 236, 226, 0.86);
+      --track-border: rgba(255, 255, 255, 0.18);
+      --track-bg: rgba(255, 255, 255, 0.08);
+      --knob: rgba(244, 236, 226, 0.66);
+      --kw-label: rgba(244, 236, 226, 0.76);
+    }
+
+    /* Light theme overrides */
+    [data-theme="light"] {
+      --atlas-text: #20202a;
+      --atlas-muted: rgba(32, 32, 42, 0.66);
+      --atlas-dim: rgba(32, 32, 42, 0.45);
+
+      --shell-fill: rgba(255, 255, 255, 0.8);
+      --grid-line: rgba(70, 68, 84, 0.06);
+      --shell-border: rgba(0, 0, 0, 0.12);
+      --bloom-line: rgba(40, 38, 52, 0.4);
+      --fs-bg: #f1eef3;
+      --ctrl-bg: rgba(0, 0, 0, 0.035);
+      --ctrl-bg-hover: rgba(0, 0, 0, 0.07);
+      --ctrl-border: rgba(0, 0, 0, 0.16);
+      --ctrl-border-hover: rgba(0, 0, 0, 0.34);
+      --ctrl-text: rgba(32, 32, 42, 0.86);
+      --track-border: rgba(0, 0, 0, 0.22);
+      --track-bg: rgba(0, 0, 0, 0.08);
+      --knob: rgba(32, 32, 42, 0.55);
+      --kw-label: rgba(40, 38, 52, 0.72);
+      --bridge-line: rgba(30, 28, 40, 0.85);
+
+      /* Light-tuned surfaces + deeper field colors for contrast on white */
+      --atlas-panel: rgba(255, 255, 255, 0.92);
+      --purple: #6c4fd0;
+      --gold: #a87c1b;
+      --teal: #0f9270;
+    }
+
+    [data-theme="light"] body {
+      background:
+        radial-gradient(circle at 18% 8%, rgba(216, 168, 95, 0.16), transparent 30%),
+        radial-gradient(circle at 82% 14%, rgba(168, 134, 255, 0.14), transparent 32%),
+        linear-gradient(145deg, #f3f0ea, #efe9f4 48%, #eceef4);
+    }
+
+    [data-theme="light"] .navbar .nav-item {
+      color: rgba(32, 32, 42, 0.7);
+    }
+
+    [data-theme="light"] .navbar .nav-item.active {
+      color: #20202a;
+    }
+
+    [data-theme="light"] .navbar .brand-name {
+      color: #20202a;
+    }
+
+    /* ============================================================
+       LIGHT THEME — field map, room nodes, panels (contrast pass)
+       ============================================================ */
+    /* Field labels: deeper colour + stronger presence */
+    [data-theme="light"] .field-label {
+      opacity: 0.96;
+      font-weight: 900;
+    }
+    /* The three big ellipses: more visible outlines + slightly stronger fill on white */
+    [data-theme="light"] .field-fill {
+      fill-opacity: 0.06;
+    }
+    [data-theme="light"] .field-ellipse {
+      stroke-opacity: 0.72;
+      stroke-width: 1.2;
+    }
+
+    /* Room nodes: darken the pale fills + add a crisp ring so the
+       node (and the lime nuclear node) reads clearly on white */
+    /* Keep node colours clean on white (no muddy brightness filter).
+       Only the pale lime (nuclear) node needs a deeper, still-clean green. */
+    [data-theme="light"] .room-node[data-room-id="nuclear"]::before {
+      background: #84cc16;
+    }
+    [data-theme="light"] .room-node[data-room-id="nuclear"] .node-label {
+      color: #84cc16;
+    }
+
+    /* Detail panel (right card) — light surface */
+    [data-theme="light"] .detail-panel {
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 24px 70px rgba(60, 50, 70, 0.16);
+    }
+    [data-theme="light"] .panel-close {
+      border-color: rgba(0, 0, 0, 0.12);
+      color: rgba(32, 32, 42, 0.7);
+      background: rgba(0, 0, 0, 0.04);
+    }
+    [data-theme="light"] .panel-close:hover,
+    [data-theme="light"] .panel-close:focus-visible {
+      border-color: rgba(0, 0, 0, 0.28);
+      color: #20202a;
+    }
+    [data-theme="light"] .panel-copy,
+    [data-theme="light"] .input-copy {
+      color: rgba(32, 32, 42, 0.74);
+    }
+    [data-theme="light"] .input-copy {
+      border-left-color: rgba(0, 0, 0, 0.18);
+    }
+    [data-theme="light"] .score-row {
+      color: rgba(32, 32, 42, 0.72);
+    }
+    [data-theme="light"] .chip {
+      border-color: rgba(0, 0, 0, 0.12);
+      color: rgba(32, 32, 42, 0.78);
+      background: rgba(0, 0, 0, 0.04);
+    }
+    [data-theme="light"] .blind-spot {
+      border-color: rgba(140, 104, 214, 0.38);
+      background: rgba(140, 104, 214, 0.1);
+      color: rgba(32, 32, 42, 0.82);
+    }
+    [data-theme="light"] .section-label {
+      color: rgba(32, 32, 42, 0.5);
+    }
+    [data-theme="light"] .path-button {
+      border-color: rgba(0, 0, 0, 0.12);
+      color: rgba(32, 32, 42, 0.82);
+      background: rgba(0, 0, 0, 0.035);
+    }
+    [data-theme="light"] .path-button:hover,
+    [data-theme="light"] .path-button:focus-visible {
+      border-color: rgba(0, 0, 0, 0.34);
+      background: rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .panel-foot {
+      color: rgba(32, 32, 42, 0.46);
+    }
+    [data-theme="light"] .detail-panel::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Bridge composer (bottom card) + toast — light surface */
+    [data-theme="light"] .bridge-composer {
+      border-color: rgba(0, 0, 0, 0.14);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 52px rgba(60, 50, 70, 0.18);
+    }
+    [data-theme="light"] .generated-input {
+      color: rgba(32, 32, 42, 0.92);
+    }
+    [data-theme="light"] .bridge-tag {
+      color: rgba(32, 32, 42, 0.82);
+      background: rgba(30, 28, 40, 0.09);
+    }
+    [data-theme="light"] .bridge-cross {
+      color: rgba(32, 32, 42, 0.5);
+    }
+    [data-theme="light"] .talk-option {
+      border-color: rgba(0, 0, 0, 0.12);
+      color: rgba(32, 32, 42, 0.86);
+      background: rgba(0, 0, 0, 0.035);
+    }
+    [data-theme="light"] .talk-option:hover,
+    [data-theme="light"] .talk-option:focus-visible {
+      border-color: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .talk-option.is-selected {
+      border-color: rgba(168, 124, 27, 0.5);
+      background: rgba(168, 124, 27, 0.12);
+    }
+    [data-theme="light"] .confirm-card {
+      border-color: rgba(168, 124, 27, 0.4);
+      background: rgba(168, 124, 27, 0.1);
+    }
+    [data-theme="light"] .confirm-card p {
+      color: rgba(32, 32, 42, 0.72);
+    }
+    [data-theme="light"] .action-button,
+    [data-theme="light"] .confirm-button {
+      border-color: rgba(0, 0, 0, 0.16);
+      color: rgba(32, 32, 42, 0.84);
+      background: rgba(0, 0, 0, 0.045);
+    }
+    [data-theme="light"] .action-button.primary,
+    [data-theme="light"] .confirm-button.primary {
+      color: #f4ece2;
+      background: #20202a;
+    }
+    [data-theme="light"] .action-button:hover,
+    [data-theme="light"] .action-button:focus-visible {
+      border-color: rgba(0, 0, 0, 0.34);
+    }
+    [data-theme="light"] .toast {
+      border-color: rgba(0, 0, 0, 0.16);
+      color: rgba(32, 32, 42, 0.88);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    @property --pulse {
+      syntax: "<number>";
+      inherits: true;
+      initial-value: 1;
+    }
+
+    body {
+      min-height: 100dvh;
+      color: var(--atlas-text);
+    }
+
+    .brand-mark {
+      box-shadow: none;
+    }
+
+    .atlas-page {
+      width: min(1440px, calc(100% - 64px));
+      margin: 0 auto;
+      padding: 128px 0 40px;
+      transform: scale(var(--page-zoom));
+      transform-origin: top center;
+    }
+
+    .atlas-hero {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      margin-bottom: clamp(12px, 1.6vw, 20px);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, "Times New Roman", serif;
+      font-size: clamp(30px, 4.2vw, 52px);
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.04;
+    }
+
+    .intro-copy {
+      max-width: 680px;
+      margin: 10px auto 0;
+      color: var(--atlas-muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .workspace {
+      position: relative;
+      min-height: max(720px, calc(100dvh - 206px));
+    }
+
+    .atlas-shell {
+      position: relative;
+      min-height: max(720px, calc(100dvh - 206px));
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--shell-border);
+      border-radius: 18px;
+      background-color: var(--shell-fill);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+
+    .atlas-toolbar {
+      position: relative;
+      z-index: 18;
+      margin-top: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .theme-toggle {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 1px solid var(--ctrl-border);
+      border-radius: 50%;
+      color: var(--ctrl-text);
+      background: var(--ctrl-bg);
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .theme-toggle:hover,
+    .theme-toggle:focus-visible {
+      border-color: var(--ctrl-border-hover);
+      background: var(--ctrl-bg-hover);
+      outline: 0;
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
+    .theme-toggle .icon-sun {
+      display: none;
+    }
+
+    [data-theme="light"] .theme-toggle .icon-moon {
+      display: none;
+    }
+
+    [data-theme="light"] .theme-toggle .icon-sun {
+      display: block;
+    }
+
+    /* Grouped zoom controls — one bordered pill, segmented inside */
+    .zoom-group {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      border: 1px solid var(--ctrl-border);
+      border-radius: 999px;
+      background: var(--ctrl-bg);
+      overflow: hidden;
+    }
+
+    .zoom-button {
+      display: grid;
+      min-width: 34px;
+      height: 100%;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--ctrl-text);
+      font: inherit;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease;
+    }
+
+    .zoom-button + .zoom-button {
+      border-left: 1px solid var(--ctrl-border);
+    }
+
+    .zoom-button.reset {
+      padding: 0 12px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field-switch {
+      display: inline-flex;
+      height: 32px;
+      align-items: center;
+      gap: 8px;
+      width: auto;
+      border: 1px solid var(--ctrl-border);
+      border-radius: 999px;
+      padding: 0 9px 0 11px;
+      color: var(--ctrl-text);
+      background: var(--ctrl-bg);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .field-switch:hover,
+    .field-switch:focus-visible {
+      border-color: var(--ctrl-border-hover);
+      background: var(--ctrl-bg-hover);
+      outline: 0;
+      transform: translateY(-1px);
+    }
+
+    .switch-track {
+      position: relative;
+      width: 30px;
+      height: 16px;
+      border: 1px solid var(--track-border);
+      border-radius: 999px;
+      background: var(--track-bg);
+    }
+
+    .switch-knob {
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--knob);
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .field-switch[aria-pressed="true"] .switch-knob {
+      background: var(--teal);
+      transform: translateX(14px);
+    }
+
+    .zoom-button:hover,
+    .zoom-button:focus-visible {
+      background: var(--ctrl-bg-hover);
+      outline: 0;
+    }
+
+    .atlas-map,
+    .zoom-plane,
+    .field-canvas,
+    .field-layer,
+    .field-label-layer,
+    .line-svg,
+    .room-layer,
+    .keyword-layer {
+      position: absolute;
+      inset: 0;
+    }
+
+    .atlas-map {
+      overflow: hidden;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .atlas-map.is-panning {
+      cursor: grabbing;
+    }
+
+    /* Promote to a GPU layer only while interacting — keeps pan/zoom smooth
+       without the permanent tiled layer that caused the translucent-fill seam. */
+    .atlas-map.is-panning .zoom-plane,
+    .atlas-map.is-zooming .zoom-plane {
+      will-change: transform;
+    }
+
+    .atlas-map.is-panning .zoom-plane {
+      transition: none;
+    }
+
+    .atlas-map.fields-off .field-layer {
+      opacity: 0 !important;
+      visibility: hidden;
+    }
+
+    .atlas-map.fields-off .field-label-layer {
+      opacity: 0 !important;
+      visibility: hidden;
+    }
+
+    .atlas-map.fields-on .node-label {
+      opacity: 0 !important;
+    }
+
+    .atlas-map.fields-off .node-label {
+      opacity: 1 !important;
+    }
+
+    .atlas-map.fields-off .room-node {
+      cursor: grab;
+    }
+
+    .atlas-map.fields-off .room-node.is-dragging {
+      cursor: grabbing;
+    }
+
+    .atlas-map.is-dragging-room .room-node,
+    .atlas-map.is-dragging-room .keyword-node,
+    .atlas-map.is-dragging-room .line-svg line {
+      transition: none !important;
+    }
+
+    .zoom-plane {
+      /* 2D translate (NOT translate3d) so the plane is not a *permanent* GPU layer.
+         A permanently-composited layer tiles its raster and double-blends the
+         antialiasing of the translucent field fills at tile boundaries, leaving a
+         faint horizontal seam. We promote to a GPU layer only DURING pan/zoom
+         (.is-panning / .is-zooming) so interaction stays smooth, then render
+         seam-free when idle. */
+      transform: translate(var(--pan-x, 0px), var(--pan-y, 0px)) scale(var(--zoom, 1));
+      transform-origin: 50% 50%;
+      /* Obsidian-style camera: the whole plane scales as one smooth transform */
+      transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .field-layer,
+    .line-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .field-canvas {
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      right: auto;
+      bottom: auto;
+      pointer-events: none;
+    }
+
+    .field-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: none;
+      pointer-events: none;
+      transition: opacity 280ms ease;
+    }
+
+    /* The shapes are <path> ellipses (single subpath), so a plain translucent
+       fill-opacity renders seamlessly — no element-opacity layer needed. */
+    .field-fill {
+      fill: var(--field-color);
+      fill-opacity: 0.05;
+    }
+
+    .field-ellipse {
+      fill: none;
+      stroke: var(--field-color);
+      stroke-opacity: 0.55;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .region-highlight {
+      fill: var(--region-highlight-fill, rgba(244, 236, 226, 0.14));
+      display: none;
+      fill-opacity: 1;
+      pointer-events: none;
+    }
+
+    .region-highlight.is-active {
+      display: block;
+    }
+
+    .venn-region {
+      opacity: 1;
+      fill-opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .venn-region.is-hovered {
+      fill-opacity: 0;
+    }
+
+    .line-svg {
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* Theme the bloom spokes (CSS overrides the inline stroke attribute set in
+       JS); bridge lines keep their own bright stroke. */
+    .line-svg line {
+      stroke: var(--bloom-line);
+    }
+
+    .line-svg line.bridge-line {
+      stroke: var(--bridge-line, rgba(255, 255, 255, 0.9));
+    }
+
+    .field-name {
+      display: none;
+    }
+
+    .field-label-layer {
+      z-index: 5;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .field-label {
+      position: absolute;
+      color: var(--field-label-color);
+      font-size: calc(0.74rem * var(--node-font-comp));
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      opacity: 0.78;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .field-label.metaphysical {
+      --field-label-color: var(--purple);
+    }
+
+    .field-label.physical {
+      --field-label-color: var(--gold);
+    }
+
+    .field-label.psychological {
+      --field-label-color: var(--teal);
+    }
+
+    /* Fullscreen / maximize controls */
+    .map-fab {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 22;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--ctrl-border);
+      border-radius: 11px;
+      color: var(--ctrl-text);
+      background: var(--ctrl-bg);
+      backdrop-filter: blur(14px);
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .map-fab:hover,
+    .map-fab:focus-visible {
+      border-color: var(--ctrl-border-hover);
+      background: var(--ctrl-bg-hover);
+      transform: translateY(-1px);
+      outline: 0;
+    }
+
+    .map-fab svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .map-fab .icon-exit {
+      display: none;
+    }
+
+    .fs-controls {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 22;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .workspace.is-fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      margin: 0;
+      min-height: 0;
+      background: var(--fs-bg);
+    }
+
+    .workspace.is-fullscreen .atlas-shell {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .workspace.is-fullscreen .fs-controls {
+      display: flex;
+    }
+
+    .workspace.is-fullscreen .map-fab .icon-expand {
+      display: none;
+    }
+
+    .workspace.is-fullscreen .map-fab .icon-exit {
+      display: block;
+    }
+
+    body.fs-active .bridge-composer,
+    body.fs-active .toast {
+      z-index: 9600;
+    }
+
+    /* The page applies transform: scale(var(--page-zoom)) which would trap a
+       position:fixed descendant. Neutralize it while the fullscreen overlay is
+       up (the rest of the page is hidden behind it anyway). */
+    body.fs-active .atlas-page {
+      transform: none;
+    }
+
+    .room-layer,
+    .keyword-layer {
+      z-index: 4;
+    }
+
+    .keyword-layer {
+      pointer-events: none;
+    }
+
+    .room-node,
+    .keyword-node {
+      position: absolute;
+      display: grid;
+      width: 22px;
+      height: 22px;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      padding: 0;
+      color: var(--atlas-text);
+      background: transparent;
+      cursor: pointer;
+      --hover-scale: 1;
+      transform: translate(-50%, -50%) scale(calc(var(--pin-scale, 1) * var(--hover-scale)));
+      /* Match the plane's timing so the counter-scale tracks the zoom in lockstep */
+      transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), border-color 180ms ease;
+      touch-action: manipulation;
+    }
+
+    .room-node::before,
+    .keyword-node::before {
+      position: absolute;
+      border-radius: inherit;
+      content: "";
+    }
+
+    .room-node::before {
+      inset: 2px;
+      background: var(--node-color);
+    }
+
+    .room-node:hover,
+    .room-node:focus-visible,
+    .room-node.is-active {
+      --hover-scale: 1.12;
+      outline: 0;
+    }
+
+    .node-label {
+      position: absolute;
+      left: 28px;
+      top: 50%;
+      width: max-content;
+      max-width: 170px;
+      color: var(--node-color);
+      font-size: calc(0.68rem * var(--node-font-comp));
+      font-weight: 750;
+      line-height: 1.18;
+      text-align: left;
+      transform: translateY(-50%);
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+
+    .keyword-node {
+      width: 13px;
+      height: 13px;
+      /* 'backwards' (not 'both'): holds the start state before the bloom runs so
+         there's no opening flash, but releases the transform afterward so the
+         :hover scale rule applies (with 'both' the final keyframe locked the
+         transform and killed hover-scaling on animated nodes). */
+      animation: bloom 300ms ease backwards;
+      pointer-events: auto;
+    }
+
+    .keyword-node.no-bloom {
+      animation: none;
+    }
+
+    .keyword-node::before {
+      inset: 2px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .keyword-node::after {
+      position: absolute;
+      inset: -5px;
+      border: 1px solid transparent;
+      border-radius: inherit;
+      content: "";
+      opacity: 0;
+    }
+
+    .keyword-node:hover,
+    .keyword-node:focus-visible,
+    .keyword-node.is-selected {
+      --hover-scale: 1.16;
+      outline: 0;
+    }
+
+    .keyword-node.is-selected::after {
+      border-color: rgba(255, 255, 255, 0.92);
+      opacity: 1;
+    }
+
+    [data-theme="light"] .keyword-node::before {
+      background: rgba(28, 26, 38, 0.88);
+    }
+
+    [data-theme="light"] .keyword-node.is-selected::after {
+      border-color: rgba(28, 26, 38, 0.9);
+    }
+
+    .keyword-label {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: max-content;
+      max-width: none;
+      color: var(--kw-label);
+      font-size: calc(0.61rem * var(--node-font-comp));
+      font-weight: 700;
+      line-height: 1.16;
+      text-align: left;
+      transform: translateY(-50%);
+      /* The label is part of the hit target — clicking the text selects too */
+      pointer-events: auto;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: left 160ms ease, right 160ms ease, color 160ms ease;
+    }
+
+    .keyword-node.label-left .keyword-label {
+      right: 16px;
+      left: auto;
+      text-align: right;
+    }
+
+    .keyword-node.is-selected .keyword-label {
+      left: 22px;
+    }
+
+    .keyword-node.label-left.is-selected .keyword-label {
+      right: 22px;
+      left: auto;
+    }
+
+    .room-node.label-left .node-label {
+      right: 28px;
+      left: auto;
+      text-align: right;
+    }
+
+    .room-node.label-bottom .node-label {
+      top: 24px;
+      left: 50%;
+      max-width: 120px;
+      text-align: center;
+      transform: translateX(-50%);
+    }
+
+    .detail-panel {
+      position: absolute;
+      top: 64px;
+      right: 0;
+      z-index: 16;
+      display: flex;
+      width: min(310px, 32vw);
+      max-height: calc(100% - 86px);
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 18px;
+      padding: 18px;
+      background: var(--atlas-panel);
+      backdrop-filter: blur(18px);
+      overflow: auto;
+      scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+      scrollbar-width: thin;
+      transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+    }
+
+    .detail-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .detail-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .detail-panel::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .detail-panel.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(14px);
+    }
+
+    .panel-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 50%;
+      color: rgba(244, 236, 226, 0.72);
+      background: rgba(255, 255, 255, 0.04);
+      font: inherit;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .panel-close:hover,
+    .panel-close:focus-visible {
+      border-color: rgba(255, 255, 255, 0.28);
+      color: rgba(244, 236, 226, 0.94);
+      outline: 0;
+    }
+
+    .panel-eyebrow {
+      margin: 0 0 9px;
+      color: var(--atlas-dim);
+      font-size: 0.68rem;
+      font-weight: 850;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .detail-panel h2 {
+      margin: 0;
+      font-size: 1.38rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    .panel-copy,
+    .input-copy {
+      color: rgba(244, 236, 226, 0.68);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    .input-copy {
+      margin: 14px 0;
+      padding-left: 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(244, 236, 226, 0.78);
+      font-family: "Fraunces", Georgia, "Times New Roman", serif;
+      font-size: 0.93rem;
+    }
+
+    .score-list {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 8px;
+      align-items: center;
+      color: rgba(244, 236, 226, 0.66);
+      font-size: 0.68rem;
+      font-weight: 750;
+    }
+
+    .score-level {
+      justify-self: end;
+      border: 1px solid color-mix(in srgb, var(--score-color), transparent 42%);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--score-color);
+      background: color-mix(in srgb, var(--score-color), transparent 92%);
+      font-size: 0.63rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 13px 0 0;
+    }
+
+    .chip {
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      padding: 6px 8px;
+      color: rgba(244, 236, 226, 0.76);
+      background: rgba(255, 255, 255, 0.045);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .blind-spot {
+      margin: 16px 0;
+      border: 1px solid rgba(185, 151, 255, 0.24);
+      border-radius: 13px;
+      padding: 12px;
+      background: rgba(185, 151, 255, 0.08);
+      color: rgba(244, 236, 226, 0.78);
+      font-size: 0.79rem;
+      line-height: 1.52;
+    }
+
+    .section-label {
+      margin: 17px 0 9px;
+      color: rgba(244, 236, 226, 0.52);
+      font-size: 0.67rem;
+      font-weight: 850;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .path-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .path-button {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 11px;
+      padding: 9px 10px;
+      color: rgba(244, 236, 226, 0.82);
+      background: rgba(255, 255, 255, 0.04);
+      font: inherit;
+      font-size: 0.76rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .path-button:hover,
+    .path-button:focus-visible {
+      border-color: rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.075);
+      outline: 0;
+      transform: translateY(-1px);
+    }
+
+    .panel-foot {
+      margin-top: 20px;
+      color: rgba(244, 236, 226, 0.38);
+      font-size: 0.7rem;
+      line-height: 1.5;
+    }
+
+    .bridge-composer {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 25;
+      width: min(720px, calc(100vw - 32px));
+      --bridge-space: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: var(--bridge-space);
+      background: rgba(12, 12, 14, 0.88);
+      backdrop-filter: blur(18px);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 18px) scale(var(--page-zoom-resting));
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+
+    .bridge-composer.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0) scale(var(--page-zoom));
+    }
+
+    .generated-input {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: calc(var(--bridge-space) * 0.5);
+      margin: 0;
+      color: rgba(255, 255, 255, 0.94);
+      font-family: "Fraunces", Georgia, "Times New Roman", serif;
+      font-size: clamp(0.88rem, 1.12vw, 1rem);
+      line-height: 1.25;
+    }
+
+    .bridge-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 7px;
+      color: rgba(244, 236, 226, 0.82);
+      background: rgba(244, 236, 226, 0.115);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.68rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .bridge-cross {
+      color: rgba(244, 236, 226, 0.52);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.84rem;
+      font-weight: 900;
+    }
+
+    .talk-options {
+      display: none;
+      gap: calc(var(--bridge-space) * 0.5);
+      margin-top: var(--bridge-space);
+    }
+
+    .talk-options.is-visible {
+      display: grid;
+    }
+
+    .talk-option-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: calc(var(--bridge-space) * 0.5);
+      align-items: stretch;
+    }
+
+    .talk-option {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 12px;
+      padding: 9px 10px;
+      color: rgba(244, 236, 226, 0.88);
+      background: rgba(255, 255, 255, 0.045);
+      font: inherit;
+      font-family: "Fraunces", Georgia, "Times New Roman", serif;
+      font-size: 0.82rem;
+      line-height: 1.28;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .talk-option:hover,
+    .talk-option:focus-visible {
+      border-color: rgba(244, 236, 226, 0.32);
+      background: rgba(255, 255, 255, 0.075);
+      outline: 0;
+      transform: translateY(-1px);
+    }
+
+    .talk-option.is-selected {
+      border-color: rgba(216, 168, 95, 0.42);
+      background: rgba(216, 168, 95, 0.1);
+    }
+
+    .confirm-card {
+      display: grid;
+      width: 158px;
+      align-content: center;
+      gap: calc(var(--bridge-space) * 0.5);
+      border: 1px solid rgba(216, 168, 95, 0.28);
+      border-radius: 12px;
+      padding: 8px;
+      background: rgba(216, 168, 95, 0.08);
+    }
+
+    .confirm-card p {
+      margin: 0;
+      color: rgba(244, 236, 226, 0.72);
+      font-size: 0.68rem;
+      line-height: 1.25;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: calc(var(--bridge-space) * 0.4);
+    }
+
+    .confirm-button {
+      flex: 1;
+      min-height: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      color: rgba(244, 236, 226, 0.84);
+      background: rgba(255, 255, 255, 0.055);
+      font: inherit;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .confirm-button.primary {
+      color: #050505;
+      background: rgba(244, 236, 226, 0.9);
+    }
+
+    .talk-option:disabled,
+    .action-button:disabled {
+      cursor: wait;
+      opacity: 0.62;
+      transform: none;
+    }
+
+    .bridge-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--bridge-space) * 0.5);
+      margin-top: var(--bridge-space);
+    }
+
+    .action-button {
+      min-height: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 0 14px;
+      color: rgba(244, 236, 226, 0.82);
+      background: rgba(255, 255, 255, 0.055);
+      font: inherit;
+      font-size: 0.76rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .action-button.primary {
+      color: #050505;
+      background: rgba(244, 236, 226, 0.92);
+    }
+
+    .action-button:hover,
+    .action-button:focus-visible {
+      border-color: rgba(255, 255, 255, 0.38);
+      transform: translateY(-1px);
+      outline: 0;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 30;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 11px 14px;
+      color: rgba(244, 236, 226, 0.88);
+      background: rgba(12, 12, 14, 0.88);
+      font-size: 0.82rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px) scale(var(--page-zoom));
+      transform-origin: right bottom;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(var(--page-zoom));
+    }
+
+    @keyframes bloom {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(calc(var(--pin-scale, 1) * 0.45));
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(var(--pin-scale, 1));
+      }
+    }
+
+    @keyframes fieldBreathe {
+      from {
+        --pulse: 0.985;
+        margin-left: -0.4%;
+        margin-top: 0.2%;
+      }
+      to {
+        --pulse: 1.018;
+        margin-left: 0.45%;
+        margin-top: -0.28%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .atlas-toolbar {
+        position: static;
+        margin-top: 14px;
+        transform: none;
+      }
+
+      .detail-panel {
+        width: min(320px, calc(100% - 24px));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .atlas-page {
+        width: calc(100% - 24px);
+        padding-top: 148px;
+      }
+
+      .atlas-shell {
+        min-height: 640px;
+      }
+
+      .node-label,
+      .keyword-label {
+        max-width: 116px;
+        font-size: calc(0.65rem * var(--node-font-comp));
+      }
+
+      .bridge-top {
+        display: block;
+      }
+
+      .talk-option-row {
+        grid-template-columns: 1fr;
+      }
+
+      .confirm-card {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left">
+      <a class="brand" href="index.html">
+        <div class="brand-mark">M</div>
+        <div class="brand-name">Many Minds</div>
+      </a>
+      <button class="theme-toggle" type="button" aria-label="Switch to light theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+      </button>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="index.html">Home</a>
+      <a class="nav-item active" href="minds-matrix.html">My Room Matrix</a>
+      <a class="nav-item" href="me.html">Me</a>
+      <a class="nav-item" href="community.html">Community</a>
+    </div>
+  </nav>
+
+  <main class="atlas-page">
+    <header class="atlas-hero">
+      <div>
+        <h1>Your room matrix</h1>
+        <p class="intro-copy">Each conversation becomes a point on your map. Open a room, let its keywords bloom, then connect two seeds to generate a new way into the world.</p>
+      </div>
+      <div class="atlas-toolbar" aria-label="Map controls">
+        <button class="field-switch" type="button" id="fieldToggle" aria-pressed="false">
+          <span>Fields</span>
+          <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+        </button>
+        <div class="zoom-group">
+          <button class="zoom-button" type="button" id="zoomOut" aria-label="Zoom out">-</button>
+          <button class="zoom-button reset" type="button" id="zoomReset">Reset</button>
+          <button class="zoom-button" type="button" id="zoomIn" aria-label="Zoom in">+</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="Your room matrix workspace">
+      <article class="atlas-shell" aria-label="Your room matrix map">
+        <div class="atlas-map" id="atlasMap">
+          <div class="zoom-plane" id="zoomPlane">
+            <canvas class="field-canvas" id="fieldCanvas" aria-hidden="true"></canvas>
+            <svg class="field-layer" id="fieldSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <!-- Ellipses are rendered as <path> (single Bézier subpath): the
+                     <ellipse> element fills as two arcs joined on its diameter and
+                     leaves a seam at translucent opacity; a path fills as one region. -->
+                <mask id="mask-m" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="black" />
+                  <path data-field-shape="M" fill="white" />
+                </mask>
+                <mask id="mask-p" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="black" />
+                  <path data-field-shape="P" fill="white" />
+                </mask>
+                <mask id="mask-psy" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="black" />
+                  <path data-field-shape="Psy" fill="white" />
+                </mask>
+                <mask id="mask-not-m" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="white" />
+                  <path data-field-shape="M" fill="black" />
+                </mask>
+                <mask id="mask-not-p" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="white" />
+                  <path data-field-shape="P" fill="black" />
+                </mask>
+                <mask id="mask-not-psy" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                  <rect width="100" height="100" fill="white" />
+                  <path data-field-shape="Psy" fill="black" />
+                </mask>
+                <clipPath id="clip-m" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-shape="M" />
+                </clipPath>
+                <clipPath id="clip-p" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-shape="P" />
+                </clipPath>
+                <clipPath id="clip-psy" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-shape="Psy" />
+                </clipPath>
+                <clipPath id="clip-not-m" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-not-shape="M" clip-rule="evenodd" />
+                </clipPath>
+                <clipPath id="clip-not-p" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-not-shape="P" clip-rule="evenodd" />
+                </clipPath>
+                <clipPath id="clip-not-psy" clipPathUnits="userSpaceOnUse">
+                  <path data-clip-not-shape="Psy" clip-rule="evenodd" />
+                </clipPath>
+              </defs>
+
+              <path data-field-shape="M" class="field-fill" style="--field-color: var(--purple)" />
+              <path data-field-shape="P" class="field-fill" style="--field-color: var(--gold)" />
+              <path data-field-shape="Psy" class="field-fill" style="--field-color: var(--teal)" />
+
+              <g class="venn-regions">
+                <g mask="url(#mask-m)"><g mask="url(#mask-not-p)"><g mask="url(#mask-not-psy)">
+                  <rect class="venn-region" data-region="m" width="100" height="100" fill="var(--purple)" />
+                </g></g></g>
+                <g mask="url(#mask-p)"><g mask="url(#mask-not-m)"><g mask="url(#mask-not-psy)">
+                  <rect class="venn-region" data-region="p" width="100" height="100" fill="var(--gold)" />
+                </g></g></g>
+                <g mask="url(#mask-psy)"><g mask="url(#mask-not-m)"><g mask="url(#mask-not-p)">
+                  <rect class="venn-region" data-region="psy" width="100" height="100" fill="var(--teal)" />
+                </g></g></g>
+                <g mask="url(#mask-m)"><g mask="url(#mask-p)"><g mask="url(#mask-not-psy)">
+                  <rect class="venn-region" data-region="mp" width="100" height="100" fill="var(--gold)" />
+                </g></g></g>
+                <g mask="url(#mask-m)"><g mask="url(#mask-psy)"><g mask="url(#mask-not-p)">
+                  <rect class="venn-region" data-region="mpsy" width="100" height="100" fill="var(--purple)" />
+                </g></g></g>
+                <g mask="url(#mask-p)"><g mask="url(#mask-psy)"><g mask="url(#mask-not-m)">
+                  <rect class="venn-region" data-region="ppsy" width="100" height="100" fill="var(--teal)" />
+                </g></g></g>
+                <g mask="url(#mask-m)"><g mask="url(#mask-p)"><g mask="url(#mask-psy)">
+                  <rect class="venn-region" data-region="all" width="100" height="100" fill="var(--atlas-text)" />
+                </g></g></g>
+              </g>
+
+              <g class="region-highlight-layer" id="regionHighlight">
+                <g clip-path="url(#clip-m)"><g clip-path="url(#clip-not-p)"><g clip-path="url(#clip-not-psy)">
+                  <rect class="region-highlight" data-highlight-region="m" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-p)"><g clip-path="url(#clip-not-m)"><g clip-path="url(#clip-not-psy)">
+                  <rect class="region-highlight" data-highlight-region="p" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-psy)"><g clip-path="url(#clip-not-m)"><g clip-path="url(#clip-not-p)">
+                  <rect class="region-highlight" data-highlight-region="psy" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-m)"><g clip-path="url(#clip-p)"><g clip-path="url(#clip-not-psy)">
+                  <rect class="region-highlight" data-highlight-region="mp" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-m)"><g clip-path="url(#clip-psy)"><g clip-path="url(#clip-not-p)">
+                  <rect class="region-highlight" data-highlight-region="mpsy" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-p)"><g clip-path="url(#clip-psy)"><g clip-path="url(#clip-not-m)">
+                  <rect class="region-highlight" data-highlight-region="ppsy" width="100" height="100" />
+                </g></g></g>
+                <g clip-path="url(#clip-m)"><g clip-path="url(#clip-p)"><g clip-path="url(#clip-psy)">
+                  <rect class="region-highlight" data-highlight-region="all" width="100" height="100" />
+                </g></g></g>
+              </g>
+              <path data-field-shape="M" class="field-ellipse" style="--field-color: var(--purple)" />
+              <path data-field-shape="P" class="field-ellipse" style="--field-color: var(--gold)" />
+              <path data-field-shape="Psy" class="field-ellipse" style="--field-color: var(--teal)" />
+            </svg>
+            <svg class="line-svg" id="lineSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div class="room-layer" id="roomLayer"></div>
+            <div class="keyword-layer" id="keywordLayer"></div>
+          </div>
+          <div class="field-label-layer" aria-hidden="true">
+            <span class="field-label metaphysical" data-field="M">Metaphysical</span>
+            <span class="field-label physical" data-field="P">Physical</span>
+            <span class="field-label psychological" data-field="Psy">Psychological</span>
+          </div>
+          <!--
+            Venn region numbering — INTERNAL/DEV reference only (not shown to users):
+              1 = m    (Metaphysical only)
+              2 = mp   (Metaphysical ∩ Physical)        ← e.g. "Google Without IPO"
+              3 = p    (Physical only)
+              4 = mpsy (Metaphysical ∩ Psychological)
+              5 = all  (Metaphysical ∩ Physical ∩ Psychological)
+              6 = ppsy (Physical ∩ Psychological)
+              7 = psy  (Psychological only)
+            These keys match data-region on the .venn-region rects above.
+          -->
+        </div>
+        <div class="fs-controls">
+          <button class="theme-toggle" type="button" id="themeToggleFs" aria-label="Switch theme">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+          </button>
+          <button class="field-switch" type="button" id="fieldToggleFs" aria-pressed="true">
+            <span>Fields</span>
+            <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+          </button>
+        </div>
+        <button class="map-fab" type="button" id="fullscreenBtn" aria-label="Fullscreen">
+          <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
+          </svg>
+          <svg class="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />
+          </svg>
+        </button>
+      </article>
+
+      <aside class="detail-panel" id="detailPanel" aria-live="polite"></aside>
+    </section>
+  </main>
+
+  <section class="bridge-composer" id="bridgeComposer" aria-live="polite" aria-label="Bridge Composer">
+    <p class="generated-input" id="generatedInput"></p>
+    <div class="talk-options" id="talkOptions" aria-label="Suggested room inputs"></div>
+    <div class="bridge-actions">
+      <button class="action-button primary" type="button" id="talkButton">What can we talk</button>
+      <button class="action-button" type="button" data-demo-action>Save bridge</button>
+      <button class="action-button" type="button" id="clearBridge">Clear</button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status">Demo only - this would open a new room.</div>
+
+  <script>
+    const rooms = [
+      {
+        id: "nuclear",
+        title: "Nuclear for Climate",
+        input: "Should we speed up nuclear for climate?",
+        x: 73,
+        y: 33,
+        color: "#d8ff36",
+        labelSide: "right",
+        scores: {
+          physical: 0.88,
+          psychological: 0.42,
+          metaphysical: 0.58
+        },
+        keywords: [
+          "Nuclear",
+          "Climate",
+          "Risk",
+          "Public Trust",
+          "Waste",
+          "Future Generations"
+        ],
+        blindSpot: "You explored nuclear as an energy and policy problem, but barely touched it as a moral inheritance across generations.",
+        suggestedPaths: [
+          "Nuclear x Future Generations",
+          "Waste x Public Trust",
+          "Climate x Risk"
+        ],
+        bridges: {
+          "Nuclear|Future Generations": "Do we have the right to solve today's climate crisis by passing nuclear waste and invisible risk to people who cannot consent?",
+          "Waste|Public Trust": "When institutions ask the public to trust them with risks that last longer than any government, what kind of trust is that?",
+          "Climate|Risk": "When climate risk and nuclear risk point in opposite directions, how should we choose which danger deserves urgency?",
+          "Climate|Moral Responsibility": "If nuclear energy is one of the fastest paths to decarbonization, is opposing it for safety reasons moral caution or moral failure?"
+        }
+      },
+      {
+        id: "google",
+        title: "Google Without IPO",
+        input: "What if Google didn't IPO?",
+        x: 27,
+        y: 28,
+        color: "#ff6250",
+        labelSide: "bottom",
+        scores: {
+          physical: 0.62,
+          psychological: 0.28,
+          metaphysical: 0.68
+        },
+        keywords: [
+          "Google",
+          "Capital",
+          "Founder Control",
+          "Public Markets",
+          "Monopoly",
+          "Historical Possibility"
+        ],
+        blindSpot: "You explored Google's IPO as a finance and power question, but barely touched how public markets shape what society believes innovation is for.",
+        suggestedPaths: [
+          "Founder Control x Public Markets",
+          "Google x Monopoly",
+          "Capital x Historical Possibility"
+        ],
+        bridges: {
+          "Founder Control|Public Markets": "When a company becomes infrastructure for human knowledge, should its future be shaped by founders, investors, users, or the public?",
+          "Monopoly|Innovation": "Does monopoly kill innovation, or does it sometimes create the stability needed to build impossible things?",
+          "Google|Monopoly": "If a search engine becomes the doorway to knowledge, when does usefulness become dependence?",
+          "Capital|Historical Possibility": "How many futures never happen because the capital structure of a company makes them impossible?"
+        }
+      }
+    ];
+
+    const roomLayer = document.getElementById("roomLayer");
+    const keywordLayer = document.getElementById("keywordLayer");
+    const lineSvg = document.getElementById("lineSvg");
+    const atlasMap = document.getElementById("atlasMap");
+    const detailPanel = document.getElementById("detailPanel");
+    const bridgeComposer = document.getElementById("bridgeComposer");
+    const generatedInput = document.getElementById("generatedInput");
+    const talkOptions = document.getElementById("talkOptions");
+    const talkButton = document.getElementById("talkButton");
+    const toast = document.getElementById("toast");
+    const zoomPlane = document.getElementById("zoomPlane");
+    const fieldCanvas = document.getElementById("fieldCanvas");
+    const regionHighlight = document.getElementById("regionHighlight");
+
+    let selectedRoom = null;
+    let expandedRooms = new Set();
+    let selectedKeywords = [];
+    let keywordPositions = new Map();
+    let fieldAnchorCache = new Map();
+    let bloomIdeals = new Map();
+    const labelSizeCache = new Map();
+    let toastTimer = null;
+    let zoom = 1;
+    let panX = 0;
+    let panY = 0;
+    let fieldsVisible = false;
+    let activeRegionKey = null;
+    let freeMotionFrame = null;
+    let draggingRoom = null;
+    let draggingCanvas = null;
+    let dragSuppressClick = false;
+    let panelHidden = false;
+    let currentBridgeKey = "";
+    let talkPrompts = [];
+    let selectedTalkPrompt = "";
+    const freePositions = new Map(rooms.map((room) => [room.id, { x: room.x, y: room.y }]));
+    const floatOffsets = new Map(rooms.map((room, index) => [room.id, { phase: index * 1.7, x: 0, y: 0 }]));
+
+    function init() {
+      applyViewportTransform();
+      updateFieldSvgGeometry();
+      setFieldMode(false);
+      renderRooms();
+      renderPanel();
+      renderBlooms();
+      bindControls();
+    }
+
+    function bindControls() {
+      document.getElementById("clearBridge").addEventListener("click", clearBridge);
+      talkButton.addEventListener("click", toggleTalkOptions);
+      document.querySelectorAll("[data-demo-action]").forEach((button) => {
+        button.addEventListener("click", showToast);
+      });
+      document.getElementById("zoomIn").addEventListener("click", () => setZoom(zoom + 0.12));
+      document.getElementById("zoomOut").addEventListener("click", () => setZoom(zoom - 0.12));
+      document.getElementById("zoomReset").addEventListener("click", resetViewport);
+      document.querySelectorAll(".field-switch").forEach((toggle) => {
+        toggle.addEventListener("click", () => setFieldMode(!fieldsVisible));
+      });
+      document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+      atlasMap.addEventListener("pointerdown", startCanvasPan);
+      atlasMap.addEventListener("pointermove", updateRegionHover);
+      atlasMap.addEventListener("pointerleave", clearRegionHover);
+      atlasMap.addEventListener("wheel", onWheelZoom, { passive: false });
+      window.addEventListener("resize", onResize);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && isFullscreen) toggleFullscreen();
+      });
+    }
+
+    let isFullscreen = false;
+
+    function toggleFullscreen() {
+      isFullscreen = !isFullscreen;
+      const workspace = document.querySelector(".workspace");
+      workspace.classList.toggle("is-fullscreen", isFullscreen);
+      document.body.classList.toggle("fs-active", isFullscreen);
+      const btn = document.getElementById("fullscreenBtn");
+      btn.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Fullscreen");
+      // The map just changed size — recompute everything against the new box.
+      requestAnimationFrame(refreshFieldLayout);
+    }
+
+    function onWheelZoom(event) {
+      if (!isFullscreen) return; // wheel-zoom only inside the fullscreen view
+      event.preventDefault();
+      const step = event.deltaY > 0 ? -0.08 : 0.08;
+      setZoom(zoom + step);
+    }
+
+    function refreshFieldLayout() {
+      updateFieldSvgGeometry();
+      updateRegionHighlightPath();
+      drawFieldCanvas();
+      if (fieldsVisible) {
+        computeFieldAnchors();
+      }
+      updateRoomNodePositions();
+      updateBloomPositions();
+      updateBridgeComposer();
+      updateFieldLabelAnchors();
+    }
+
+    function onResize() {
+      refreshFieldLayout();
+    }
+
+    function renderRooms() {
+      roomLayer.innerHTML = "";
+      rooms.forEach((room) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "room-node";
+        if (room.labelSide === "left") button.classList.add("label-left");
+        if (room.labelSide === "bottom") button.classList.add("label-bottom");
+        button.dataset.roomId = room.id;
+        button.style.left = `${room.x}%`;
+        button.style.top = `${room.y}%`;
+        button.style.setProperty("--node-color", room.color);
+        button.setAttribute("aria-label", `Open room: ${room.title}`);
+        button.innerHTML = `<span class="node-label">${room.title}</span>`;
+        button.addEventListener("click", () => clickRoom(room.id));
+        button.addEventListener("pointerdown", (event) => startRoomDrag(event, room.id));
+        roomLayer.appendChild(button);
+      });
+      updateRoomNodePositions();
+      updateRoomStates();
+    }
+
+    function clickRoom(roomId) {
+      if (dragSuppressClick) return;
+      const room = rooms.find((item) => item.id === roomId);
+      if (!room) return;
+
+      const wasExpanded = expandedRooms.has(roomId);
+      const wasActive = selectedRoom && selectedRoom.id === roomId;
+
+      if (wasExpanded && !wasActive) {
+        expandedRooms.delete(roomId);
+        selectedKeywords = selectedKeywords.filter((item) => item.roomId !== roomId);
+        renderBlooms();
+        updateRoomStates();
+        updateBridgeComposer();
+        return;
+      }
+
+      if (wasExpanded && wasActive) {
+        expandedRooms.delete(roomId);
+        selectedKeywords = selectedKeywords.filter((item) => item.roomId !== roomId);
+        selectedRoom = getFallbackSelectedRoom();
+        renderPanel(selectedRoom);
+        renderBlooms();
+        updateRoomStates();
+        updateBridgeComposer();
+        return;
+      }
+
+      selectedRoom = room;
+      renderPanel(room);
+      if (!wasExpanded) {
+        expandedRooms.add(roomId);
+        renderBlooms(roomId);
+      }
+      updateRoomStates();
+      updateBridgeComposer();
+    }
+
+    function setFieldMode(nextVisible) {
+      fieldsVisible = nextVisible;
+      atlasMap.classList.toggle("fields-on", fieldsVisible);
+      atlasMap.classList.toggle("fields-off", !fieldsVisible);
+      if (!fieldsVisible) clearRegionHover();
+      updateFieldSvgGeometry();
+      drawFieldCanvas();
+      document.querySelectorAll(".field-switch").forEach((toggle) => {
+        toggle.setAttribute("aria-pressed", String(fieldsVisible));
+      });
+
+      if (fieldsVisible) {
+        stopFreeMotion();
+        computeFieldAnchors();
+        setZoom(0.72);
+      } else {
+        activeRegionKey = null;
+        updateRegionHighlightPath();
+        setZoom(1);
+      }
+
+      updateRoomNodePositions();
+      updateBloomPositions();
+      updateBridgeComposer();
+      updateFieldLabelAnchors();
+
+      if (!fieldsVisible) {
+        startFreeMotion();
+      }
+    }
+
+    function updateRegionHover(event) {
+      if (!fieldsVisible) return;
+      const rect = atlasMap.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const { g, W, H } = fieldGeometries();
+      // The zoom-plane is centered on the map and transformed by pan + zoom.
+      // To hit-test against the shapes (which are in map pixel space), we must
+      // invert that transform: translate back by pan, then un-scale by zoom,
+      // both relative to the map center.
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const rawX = event.clientX - rect.left;
+      const rawY = event.clientY - rect.top;
+      const px = ((rawX - cx - panX) / zoom + cx) / rect.width * W;
+      const py = ((rawY - cy - panY) / zoom + cy) / rect.height * H;
+      const activeKey = getVennRegionKey(px, py, g);
+      if (activeRegionKey !== activeKey) {
+        activeRegionKey = activeKey;
+        updateRegionHighlightPath();
+        drawFieldCanvas();
+      }
+
+      document.querySelectorAll(".venn-region").forEach((region) => {
+        const isActive = region.dataset.region === activeKey;
+        region.classList.toggle("is-hovered", isActive);
+        region.style.fillOpacity = "";
+      });
+    }
+
+    function clearRegionHover() {
+      document.querySelectorAll(".venn-region.is-hovered").forEach((region) => {
+        region.classList.remove("is-hovered");
+      });
+      document.querySelectorAll(".venn-region").forEach((region) => {
+        region.style.fillOpacity = "";
+      });
+      activeRegionKey = null;
+      updateRegionHighlightPath();
+      drawFieldCanvas();
+    }
+
+    function regionColor(key) {
+      // The triple-overlap ("all") used a pale cream tint that is invisible on the
+      // light theme's white canvas. Make it theme-aware: a dark neutral on light,
+      // a brighter cream on dark — so the center intersection always highlights.
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+      const all = isLight ? "rgba(58, 46, 86, 0.16)" : "rgba(244, 236, 226, 0.2)";
+      return {
+        m: "rgba(185, 151, 255, 0.16)",
+        p: "rgba(217, 169, 71, 0.16)",
+        psy: "rgba(99, 240, 189, 0.16)",
+        mp: "rgba(217, 169, 71, 0.18)",
+        mpsy: "rgba(185, 151, 255, 0.18)",
+        ppsy: "rgba(99, 240, 189, 0.18)",
+        all
+      }[key] || all;
+    }
+
+    function regionMembership(key) {
+      return {
+        m: { include: ["M"], exclude: ["P", "Psy"] },
+        p: { include: ["P"], exclude: ["M", "Psy"] },
+        psy: { include: ["Psy"], exclude: ["M", "P"] },
+        mp: { include: ["M", "P"], exclude: ["Psy"] },
+        mpsy: { include: ["M", "Psy"], exclude: ["P"] },
+        ppsy: { include: ["P", "Psy"], exclude: ["M"] },
+        all: { include: ["M", "P", "Psy"], exclude: [] }
+      }[key] || null;
+    }
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function fieldColor(key) {
+      return {
+        M: cssVar("--purple") || "#b997ff",
+        P: cssVar("--gold") || "#d9a947",
+        Psy: cssVar("--teal") || "#63f0bd"
+      }[key];
+    }
+
+    function fieldCanvasMetrics(W, H) {
+      const pad = Math.max(W, H) * 0.55;
+      return {
+        pad,
+        width: W + pad * 2,
+        height: H + pad * 2
+      };
+    }
+
+    function shiftFieldGeometry(g, pad) {
+      const shifted = {};
+      Object.keys(g).forEach((key) => {
+        shifted[key] = {
+          ...g[key],
+          cx: g[key].cx + pad,
+          cy: g[key].cy + pad
+        };
+      });
+      return shifted;
+    }
+
+    function resizeFieldCanvas(W, H) {
+      if (!fieldCanvas) return null;
+      const metrics = fieldCanvasMetrics(W, H);
+      const dpr = window.devicePixelRatio || 1;
+      const nextWidth = Math.max(1, Math.round(metrics.width * dpr));
+      const nextHeight = Math.max(1, Math.round(metrics.height * dpr));
+      if (fieldCanvas.width !== nextWidth) fieldCanvas.width = nextWidth;
+      if (fieldCanvas.height !== nextHeight) fieldCanvas.height = nextHeight;
+      fieldCanvas.style.left = `${-metrics.pad}px`;
+      fieldCanvas.style.top = `${-metrics.pad}px`;
+      fieldCanvas.style.width = `${metrics.width}px`;
+      fieldCanvas.style.height = `${metrics.height}px`;
+      const ctx = fieldCanvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, metrics };
+    }
+
+    function ellipseCanvasPath(ctx, geom) {
+      ctx.ellipse(geom.cx, geom.cy, geom.a, geom.b, geom.rot, 0, Math.PI * 2);
+    }
+
+    function clipCanvasInside(ctx, geom) {
+      ctx.beginPath();
+      ellipseCanvasPath(ctx, geom);
+      ctx.clip();
+    }
+
+    function clipCanvasOutside(ctx, geom, W, H) {
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ellipseCanvasPath(ctx, geom);
+      ctx.clip("evenodd");
+    }
+
+    function drawFieldCanvas() {
+      if (!fieldCanvas) return;
+      const { g, W, H } = fieldGeometries();
+      const canvasState = resizeFieldCanvas(W, H);
+      if (!canvasState) return;
+      const { ctx, metrics } = canvasState;
+      const drawG = shiftFieldGeometry(g, metrics.pad);
+      if (!ctx) return;
+      ctx.clearRect(0, 0, metrics.width, metrics.height);
+      if (!fieldsVisible) return;
+
+      ctx.save();
+      ["M", "P", "Psy"].forEach((key) => {
+        ctx.beginPath();
+        ellipseCanvasPath(ctx, drawG[key]);
+        ctx.fillStyle = fieldColor(key);
+        ctx.globalAlpha = 0.05;
+        ctx.fill();
+      });
+      ctx.restore();
+
+      if (activeRegionKey) {
+        const membership = regionMembership(activeRegionKey);
+        if (membership) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, 0, metrics.width, metrics.height);
+          ctx.clip();
+          membership.include.forEach((key) => clipCanvasInside(ctx, drawG[key]));
+          membership.exclude.forEach((key) => clipCanvasOutside(ctx, drawG[key], metrics.width, metrics.height));
+          ctx.fillStyle = regionColor(activeRegionKey);
+          ctx.globalAlpha = 1;
+          ctx.fillRect(0, 0, metrics.width, metrics.height);
+          ctx.restore();
+        }
+      }
+
+      ctx.save();
+      ["M", "P", "Psy"].forEach((key) => {
+        ctx.beginPath();
+        ellipseCanvasPath(ctx, drawG[key]);
+        ctx.strokeStyle = fieldColor(key);
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 1 / Math.max(zoom, 0.001);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function updateRegionHighlightPath() {
+      if (!regionHighlight) return;
+      regionHighlight.querySelectorAll(".region-highlight").forEach((rect) => {
+        rect.classList.remove("is-active");
+        rect.style.removeProperty("--region-highlight-fill");
+      });
+    }
+
+    function getVennRegionKey(px, py, g) {
+      const m = ellipseValue(px, py, g.M) <= 1;
+      const p = ellipseValue(px, py, g.P) <= 1;
+      const psy = ellipseValue(px, py, g.Psy) <= 1;
+      if (m && p && psy) return "all";
+      if (m && p) return "mp";
+      if (m && psy) return "mpsy";
+      if (p && psy) return "ppsy";
+      if (m) return "m";
+      if (p) return "p";
+      if (psy) return "psy";
+      return null;
+    }
+
+    // A room belongs to a domain when that domain scores Mid or High (>= 0.34).
+    function getRoomFields(room) {
+      const fields = [];
+      if (room.scores.metaphysical >= 0.34) fields.push("M");
+      if (room.scores.physical >= 0.34) fields.push("P");
+      if (room.scores.psychological >= 0.34) fields.push("Psy");
+      return fields;
+    }
+
+    // The three field ellipses mirror the CSS: position as a center (%),
+    // width as a % of map width, height derived from aspect-ratio (so it is
+    // pixel-based), plus a rotation. We solve membership in pixel space so the
+    // result is correct at any window aspect ratio.
+    const FIELD_DEFS = {
+      M: { cx: 36, cy: 36, width: 58, ar: 1.5, rot: -15 },
+      P: { cx: 64, cy: 36, width: 58, ar: 1.5, rot: 14 },
+      Psy: { cx: 50, cy: 61, width: 64, ar: 1.62, rot: 0 }
+    };
+
+    function fieldGeometries() {
+      const map = atlasMap.getBoundingClientRect();
+      const W = map.width || 1;
+      const H = map.height || 1;
+      const g = {};
+      Object.keys(FIELD_DEFS).forEach((key) => {
+        const d = FIELD_DEFS[key];
+        const widthPx = (d.width / 100) * W;
+        g[key] = {
+          cx: (d.cx / 100) * W,
+          cy: (d.cy / 100) * H,
+          a: widthPx / 2,
+          b: widthPx / d.ar / 2,
+          rot: (d.rot * Math.PI) / 180
+        };
+      });
+      return { g, W, H };
+    }
+
+    // Axis-aligned ellipse as a single closed Bézier subpath (rotation is applied
+    // via the element's transform). One subpath fills as one region — no seam.
+    function ellipsePath(cx, cy, rx, ry, rot = 0) {
+      const k = 0.5522847498307936; // circle/ellipse Bézier constant
+      const ox = rx * k;
+      const oy = ry * k;
+      const c = Math.cos(rot);
+      const s = Math.sin(rot);
+      const p = (x, y) => {
+        const dx = x - cx;
+        const dy = y - cy;
+        return {
+          x: cx + dx * c - dy * s,
+          y: cy + dx * s + dy * c
+        };
+      };
+      const fmt = (point) => `${point.x} ${point.y}`;
+      const e = p(cx + rx, cy);
+      const q1a = p(cx + rx, cy + oy);
+      const q1b = p(cx + ox, cy + ry);
+      const q1 = p(cx, cy + ry);
+      const q2a = p(cx - ox, cy + ry);
+      const q2b = p(cx - rx, cy + oy);
+      const q2 = p(cx - rx, cy);
+      const q3a = p(cx - rx, cy - oy);
+      const q3b = p(cx - ox, cy - ry);
+      const q3 = p(cx, cy - ry);
+      const q4a = p(cx + ox, cy - ry);
+      const q4b = p(cx + rx, cy - oy);
+      return (
+        `M ${fmt(e)} ` +
+        `C ${fmt(q1a)} ${fmt(q1b)} ${fmt(q1)} ` +
+        `C ${fmt(q2a)} ${fmt(q2b)} ${fmt(q2)} ` +
+        `C ${fmt(q3a)} ${fmt(q3b)} ${fmt(q3)} ` +
+        `C ${fmt(q4a)} ${fmt(q4b)} ${fmt(e)} Z`
+      );
+    }
+
+    function updateFieldSvgGeometry() {
+      const svg = document.getElementById("fieldSvg");
+      if (!svg) return;
+
+      const { g, W, H } = fieldGeometries();
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+      ["M", "P", "Psy"].forEach((key) => {
+        const geom = g[key];
+        const def = FIELD_DEFS[key];
+        if (!geom || !def) return;
+        const d = ellipsePath(geom.cx, geom.cy, geom.a, geom.b, geom.rot);
+        svg.querySelectorAll(`[data-field-shape="${key}"]`).forEach((shape) => {
+          shape.setAttribute("d", d);
+          shape.removeAttribute("transform");
+        });
+        svg.querySelectorAll(`[data-clip-shape="${key}"]`).forEach((shape) => {
+          shape.setAttribute("d", d);
+          shape.removeAttribute("transform");
+        });
+        svg.querySelectorAll(`[data-clip-not-shape="${key}"]`).forEach((shape) => {
+          shape.setAttribute("d", `M 0 0 H ${W} V ${H} H 0 Z ${d}`);
+          shape.removeAttribute("transform");
+        });
+      });
+
+      svg.querySelectorAll("mask").forEach((mask) => {
+        mask.setAttribute("x", "0");
+        mask.setAttribute("y", "0");
+        mask.setAttribute("width", W);
+        mask.setAttribute("height", H);
+      });
+
+      svg.querySelectorAll("mask rect, .venn-region, .region-highlight").forEach((rect) => {
+        rect.setAttribute("x", "0");
+        rect.setAttribute("y", "0");
+        rect.setAttribute("width", W);
+        rect.setAttribute("height", H);
+      });
+    }
+
+    // < 1 inside the (rotated) ellipse, > 1 outside.
+    function ellipseValue(px, py, f) {
+      const dx = px - f.cx;
+      const dy = py - f.cy;
+      const c = Math.cos(-f.rot);
+      const s = Math.sin(-f.rot);
+      const xr = dx * c - dy * s;
+      const yr = dx * s + dy * c;
+      return (xr / f.a) ** 2 + (yr / f.b) ** 2;
+    }
+
+    // For each room, find the point that lies deepest inside every domain it
+    // belongs to while staying outside the domains it does not.
+    function computeFieldAnchors() {
+      const { g, W, H } = fieldGeometries();
+      fieldAnchorCache = new Map();
+      if (W < 2 || H < 2) return;
+
+      const keys = ["M", "P", "Psy"];
+      const minDim = Math.min(W, H);
+      const used = [];
+
+      rooms.forEach((room) => {
+        if (room.fieldAnchor) {
+          const anchor = {
+            x: clamp(room.fieldAnchor.x, 5, 95),
+            y: clamp(room.fieldAnchor.y, 6, 94)
+          };
+          fieldAnchorCache.set(room.id, anchor);
+          used.push({ x: (anchor.x / 100) * W, y: (anchor.y / 100) * H });
+          return;
+        }
+
+        const members = new Set(getRoomFields(room));
+        let best = null;
+        let bestScore = -Infinity;
+
+        for (let gx = 6; gx <= 94; gx += 1.2) {
+          for (let gy = 8; gy <= 92; gy += 1.2) {
+            const px = (gx / 100) * W;
+            const py = (gy / 100) * H;
+            let margin = Infinity;
+            keys.forEach((key) => {
+              const v = ellipseValue(px, py, g[key]);
+              margin = Math.min(margin, members.has(key) ? 1 - v : v - 1);
+            });
+            let score = margin;
+            used.forEach((u) => {
+              const d = Math.hypot(px - u.x, py - u.y);
+              if (d < 0.16 * minDim) score -= (0.16 * minDim - d) / minDim;
+            });
+            if (score > bestScore) {
+              bestScore = score;
+              best = { x: px, y: py };
+            }
+          }
+        }
+
+        if (best) {
+          used.push(best);
+          fieldAnchorCache.set(room.id, {
+            x: clamp((best.x / W) * 100, 5, 95),
+            y: clamp((best.y / H) * 100, 6, 94)
+          });
+        } else {
+          fieldAnchorCache.set(room.id, { x: room.x, y: room.y });
+        }
+      });
+    }
+
+    function getRoomPosition(room) {
+      if (fieldsVisible) {
+        if (!fieldAnchorCache.has(room.id)) computeFieldAnchors();
+        return fieldAnchorCache.get(room.id) || { x: room.x, y: room.y };
+      }
+      const base = freePositions.get(room.id) || { x: room.x, y: room.y };
+      const offset = floatOffsets.get(room.id) || { x: 0, y: 0 };
+      return {
+        x: clamp(base.x + offset.x, 1.5, 98.5),
+        y: clamp(base.y + offset.y, 1.5, 98.5)
+      };
+    }
+
+    function updateRoomNodePositions() {
+      rooms.forEach((room) => {
+        const node = roomLayer.querySelector(`[data-room-id="${room.id}"]`);
+        if (!node) return;
+        const point = getRoomPosition(room);
+        node.style.left = `${point.x}%`;
+        node.style.top = `${point.y}%`;
+      });
+    }
+
+    function getFallbackSelectedRoom() {
+      const nextRoomId = Array.from(expandedRooms).at(-1);
+      return rooms.find((item) => item.id === nextRoomId) || null;
+    }
+
+    function updateRoomStates() {
+      document.querySelectorAll(".room-node").forEach((node) => {
+        node.classList.toggle("is-active", selectedRoom && node.dataset.roomId === selectedRoom.id);
+        node.classList.toggle("is-expanded", expandedRooms.has(node.dataset.roomId));
+      });
+    }
+
+    function renderPanel(room) {
+      if (!room) {
+        panelHidden = true;
+        detailPanel.innerHTML = "";
+        detailPanel.classList.add("is-hidden");
+        return;
+      }
+
+      detailPanel.innerHTML = `
+        <button class="panel-close" type="button" aria-label="Close room detail">×</button>
+        <div>
+          <p class="panel-eyebrow">Selected room</p>
+          <h2>${room.title}</h2>
+          <p class="input-copy">"${room.input}"</p>
+          ${renderScores(room.scores)}
+          <div class="blind-spot">
+            <strong>Blind spot</strong><br />
+            ${room.blindSpot}
+          </div>
+          <p class="section-label">Suggested next paths</p>
+          <div class="path-list">
+            ${room.suggestedPaths.map((path) => `<button class="path-button" type="button" data-path="${path}">${path}</button>`).join("")}
+          </div>
+        </div>
+        <p class="panel-foot">Click another room to keep this bloom open and connect across rooms.</p>
+      `;
+      panelHidden = false;
+      detailPanel.classList.remove("is-hidden");
+      bindPanelClose();
+
+      detailPanel.querySelectorAll("[data-path]").forEach((button) => {
+        button.addEventListener("click", () => selectSuggestedPath(button.dataset.path, room.id));
+      });
+    }
+
+    function bindPanelClose() {
+      const closeButton = detailPanel.querySelector(".panel-close");
+      if (!closeButton) return;
+      closeButton.addEventListener("click", () => {
+        panelHidden = true;
+        detailPanel.classList.add("is-hidden");
+      });
+    }
+
+    function renderScores(scores) {
+      const rows = [
+        ["Physical", scores.physical, "var(--gold)"],
+        ["Psychological", scores.psychological, "var(--teal)"],
+        ["Metaphysical", scores.metaphysical, "var(--purple)"]
+      ];
+
+      return `
+        <div class="score-list">
+          ${rows.map(([label, score, color]) => `
+            <div class="score-row">
+              <span>${label}</span>
+              <span class="score-level" style="--score-color: ${color}">${scoreLevel(score)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function scoreLevel(score) {
+      if (score >= 0.66) return "High";
+      if (score >= 0.34) return "Mid";
+      return "Low";
+    }
+
+    function renderBlooms(animateRoomId = null) {
+      keywordLayer.innerHTML = "";
+      lineSvg.innerHTML = "";
+      keywordPositions = new Map();
+
+      expandedRooms.forEach((roomId) => {
+        const room = rooms.find((item) => item.id === roomId);
+        if (room) renderKeywordBloom(room, roomId === animateRoomId);
+      });
+
+      applyBloomPhysics();
+    }
+
+    function getLabelAngle(room) {
+      if (room.labelSide === "left") return 180;
+      if (room.labelSide === "bottom") return 90;
+      return 0; // right / default — label sits to the right of the node
+    }
+
+    function getBloomAngles(room) {
+      const count = room.keywords.length;
+      // In field mode the room title is hidden, so spread keywords evenly over
+      // the full circle (avoids piling them into the title's half and crowding).
+      if (fieldsVisible) {
+        const step = 360 / count;
+        return room.keywords.map((_, index) => -90 + step * index);
+      }
+      const blocked = getLabelAngle(room);
+      const gap = 96; // arc (deg) kept clear around the label so keywords don't collide with the title
+      const span = 360 - gap;
+      const start = blocked + gap / 2;
+      const step = span / count;
+      return room.keywords.map((_, index) => start + step * (index + 0.5));
+    }
+
+    function renderKeywordBloom(room, animate = false) {
+      const angles = getBloomAngles(room);
+      const distanceScale = getBloomDistanceScale();
+      // Make the bloom a circle in *pixels*, not in percent: the shell is much
+      // wider than tall, so an equal-% radius would pull the vertical keywords
+      // (e.g. "Google" straight up) far closer than the horizontal ones.
+      const map = atlasMap.getBoundingClientRect();
+      const W = map.width || 1200;
+      const H = map.height || 720;
+      // Pixel-space ellipse: wider horizontally so the side labels have room,
+      // with enough vertical pixels that straight up/down keywords aren't cramped.
+      const baseR = Math.min(W, H);
+      const radiusX = ((baseR * 0.138) / W) * 100 * distanceScale;
+      const radiusY = ((baseR * 0.11) / H) * 100 * distanceScale;
+      const center = getRoomPosition(room);
+
+      room.keywords.forEach((keyword, index) => {
+        const point = getKeywordPoint(center, angles[index % angles.length], radiusX, radiusY);
+        createKeyword(room, keyword, point, index, animate);
+      });
+    }
+
+    function createKeyword(room, keyword, point, index, animate = false) {
+      const selection = { roomId: room.id, keyword };
+      const key = keywordKey(selection);
+      const center = getRoomPosition(room);
+      bloomIdeals.set(key, { dx: point.x - center.x, dy: point.y - center.y });
+      keywordPositions.set(key, point);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "keyword-node";
+      if (!animate) button.classList.add("no-bloom");
+      if (point.x < center.x) button.classList.add("label-left");
+      button.dataset.roomId = room.id;
+      button.dataset.keyword = keyword;
+      button.style.left = `${point.x}%`;
+      button.style.top = `${point.y}%`;
+      button.style.animationDelay = `${index * 24}ms`;
+      button.setAttribute("aria-label", `Select keyword: ${room.title} / ${keyword}`);
+      button.innerHTML = `<span class="keyword-label">${keyword}</span>`;
+      button.addEventListener("click", () => selectKeyword(room.id, keyword));
+      keywordLayer.appendChild(button);
+
+      if (!labelSizeCache.has(key)) {
+        const label = button.querySelector(".keyword-label");
+        const rect = label ? label.getBoundingClientRect() : null;
+        labelSizeCache.set(key, {
+          w: (rect && rect.width) || 60,
+          h: (rect && rect.height) || 13
+        });
+      }
+    }
+
+    function getKeywordPoint(center, degrees, radiusX, radiusY) {
+      const angle = (degrees * Math.PI) / 180;
+      return {
+        x: clamp(center.x + Math.cos(angle) * radiusX, 3, 97),
+        y: clamp(center.y + Math.sin(angle) * radiusY, 4, 96)
+      };
+    }
+
+    function selectKeyword(roomId, keyword) {
+      const selection = { roomId, keyword };
+      const key = keywordKey(selection);
+      const exists = selectedKeywords.some((item) => keywordKey(item) === key);
+
+      if (exists) {
+        selectedKeywords = selectedKeywords.filter((item) => keywordKey(item) !== key);
+      } else {
+        if (selectedKeywords.length === 4) selectedKeywords.shift();
+        selectedKeywords.push(selection);
+      }
+
+      updateKeywordSelection();
+      updateBridgeComposer();
+    }
+
+    function selectSuggestedPath(path, roomId) {
+      const room = rooms.find((item) => item.id === roomId);
+      if (!room) return;
+
+      expandedRooms.add(roomId);
+      selectedRoom = room;
+      renderPanel(room);
+      renderBlooms();
+
+      const pair = path.split(" x ").map((item) => item.trim()).slice(0, 2);
+      applyBloomPhysics();
+      selectedKeywords = pair.map((keyword) => ({ roomId, keyword }));
+      updateRoomStates();
+      updateKeywordSelection();
+      updateBridgeComposer();
+    }
+
+    function updateBloomPositions() {
+      applyBloomPhysics();
+    }
+
+    // Force-based relaxation: keep each keyword near its original radial spot
+    // (spring back to its ideal point) while pushing apart any whose label
+    // boxes overlap — so labels never collide, without lengthening the spokes.
+    function applyBloomPhysics() {
+      const map = atlasMap.getBoundingClientRect();
+      const W = map.width;
+      const H = map.height;
+      const nodeEls = Array.from(keywordLayer.querySelectorAll(".keyword-node"));
+
+      if (!W || !H || !nodeEls.length) {
+        keywordPositions = new Map();
+        lineSvg.innerHTML = "";
+        nodeEls.forEach((el) => {
+          const room = rooms.find((r) => r.id === el.dataset.roomId);
+          if (!room) return;
+          const off = bloomIdeals.get(keywordKey({ roomId: room.id, keyword: el.dataset.keyword })) || { dx: 0, dy: 0 };
+          const center = getRoomPosition(room);
+          const pt = { x: clamp(center.x + off.dx, 2, 98), y: clamp(center.y + off.dy, 3, 97) };
+          keywordPositions.set(keywordKey({ roomId: room.id, keyword: el.dataset.keyword }), pt);
+          el.style.left = `${pt.x}%`;
+          el.style.top = `${pt.y}%`;
+        });
+        selectedKeywords = selectedKeywords.filter((s) => keywordPositions.has(keywordKey(s)));
+        updateKeywordSelection();
+        return;
+      }
+
+      const centersPx = new Map();
+      expandedRooms.forEach((id) => {
+        const room = rooms.find((r) => r.id === id);
+        if (room) {
+          const c = getRoomPosition(room);
+          centersPx.set(id, { x: (c.x / 100) * W, y: (c.y / 100) * H, room });
+        }
+      });
+
+      const nodes = [];
+      nodeEls.forEach((el) => {
+        const center = centersPx.get(el.dataset.roomId);
+        if (!center) return;
+        const key = keywordKey({ roomId: el.dataset.roomId, keyword: el.dataset.keyword });
+        const off = bloomIdeals.get(key) || { dx: 0, dy: 0 };
+        let size = labelSizeCache.get(key);
+        if (!size) {
+          const label = el.querySelector(".keyword-label");
+          const rect = label ? label.getBoundingClientRect() : null;
+          size = { w: (rect && rect.width) || 60, h: (rect && rect.height) || 13 };
+          labelSizeCache.set(key, size);
+        }
+        const ideal = { x: center.x + (off.dx / 100) * W, y: center.y + (off.dy / 100) * H };
+        nodes.push({
+          el,
+          key,
+          center,
+          ideal,
+          pos: { x: ideal.x, y: ideal.y },
+          side: off.dx < 0 ? "left" : "right",
+          w: size.w,
+          h: size.h
+        });
+      });
+
+      const obstacles = [];
+      if (!fieldsVisible) {
+        centersPx.forEach((c) => obstacles.push(roomLabelBox(c.room, c)));
+      }
+
+      const PAD = 5;
+      const GAP = 18;
+      const DOT = 7;
+      const boxOf = (n) => {
+        const t = n.pos.y - n.h / 2 - PAD;
+        const b = n.pos.y + n.h / 2 + PAD;
+        if (n.side === "left") {
+          return { l: n.pos.x - GAP - n.w - PAD, r: n.pos.x + DOT + PAD, t, b };
+        }
+        return { l: n.pos.x - DOT - PAD, r: n.pos.x + GAP + n.w + PAD, t, b };
+      };
+      const overlap = (A, B) => ({
+        ox: Math.min(A.r, B.r) - Math.max(A.l, B.l),
+        oy: Math.min(A.b, B.b) - Math.max(A.t, B.t)
+      });
+
+      const minX = 0.02 * W;
+      const maxX = 0.98 * W;
+      const minY = 0.03 * H;
+      const maxY = 0.97 * H;
+      for (let iter = 0; iter < 240; iter++) {
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const o = overlap(boxOf(nodes[i]), boxOf(nodes[j]));
+            if (o.ox > 0 && o.oy > 0) {
+              if (o.oy <= o.ox) {
+                const push = o.oy / 2;
+                const dir = nodes[i].pos.y <= nodes[j].pos.y ? -1 : 1;
+                nodes[i].pos.y += dir * push;
+                nodes[j].pos.y -= dir * push;
+              } else {
+                const push = o.ox / 2;
+                const dir = nodes[i].pos.x <= nodes[j].pos.x ? -1 : 1;
+                nodes[i].pos.x += dir * push;
+                nodes[j].pos.x -= dir * push;
+              }
+            }
+          }
+        }
+        for (const n of nodes) {
+          for (const ob of obstacles) {
+            const o = overlap(boxOf(n), ob);
+            if (o.ox > 0 && o.oy > 0) {
+              if (o.oy <= o.ox) {
+                n.pos.y += (n.pos.y <= (ob.t + ob.b) / 2 ? -1 : 1) * o.oy;
+              } else {
+                n.pos.x += (n.pos.x <= (ob.l + ob.r) / 2 ? -1 : 1) * o.ox;
+              }
+            }
+          }
+          n.pos.x += (n.ideal.x - n.pos.x) * 0.03;
+          n.pos.y += (n.ideal.y - n.pos.y) * 0.03;
+          // Clamp within bounds each iteration so nodes crowded against an edge
+          // resolve their overlap sideways instead of stacking on the boundary.
+          n.pos.x = Math.max(minX, Math.min(maxX, n.pos.x));
+          n.pos.y = Math.max(minY, Math.min(maxY, n.pos.y));
+        }
+      }
+
+      keywordPositions = new Map();
+      lineSvg.innerHTML = "";
+      nodes.forEach((n) => {
+        const xPct = clamp((n.pos.x / W) * 100, 2, 98);
+        const yPct = clamp((n.pos.y / H) * 100, 3, 97);
+        keywordPositions.set(n.key, { x: xPct, y: yPct });
+        n.el.style.left = `${xPct}%`;
+        n.el.style.top = `${yPct}%`;
+        n.el.classList.toggle("label-left", n.side === "left");
+        const cx = (n.center.x / W) * 100;
+        const cy = (n.center.y / H) * 100;
+        const dash = n.el.dataset.virtual === "1" ? "1 1" : undefined;
+        lineSvg.appendChild(createLine(cx, cy, xPct, yPct, "rgba(244,236,226,0.44)", "0.30", dash));
+      });
+
+      selectedKeywords = selectedKeywords.filter((s) => keywordPositions.has(keywordKey(s)));
+      updateKeywordSelection();
+    }
+
+    function roomLabelBox(room, c) {
+      const node = roomLayer.querySelector(`[data-room-id="${room.id}"]`);
+      let lw = 90;
+      let lh = 15;
+      if (node) {
+        const label = node.querySelector(".node-label");
+        const rect = label ? label.getBoundingClientRect() : null;
+        if (rect && rect.width) {
+          lw = rect.width;
+          lh = rect.height;
+        }
+      }
+      const GAP = 28;
+      const DOT = 11;
+      if (room.labelSide === "bottom") {
+        return { l: c.x - lw / 2, r: c.x + lw / 2, t: c.y - DOT, b: c.y + 24 + lh };
+      }
+      if (room.labelSide === "left") {
+        return { l: c.x - GAP - lw, r: c.x + DOT, t: c.y - lh / 2, b: c.y + lh / 2 };
+      }
+      return { l: c.x - DOT, r: c.x + GAP + lw, t: c.y - lh / 2, b: c.y + lh / 2 };
+    }
+
+    function getKeywordNode(roomId, keyword) {
+      return Array.from(keywordLayer.querySelectorAll(`[data-room-id="${roomId}"]`))
+        .find((node) => node.dataset.keyword === keyword);
+    }
+
+    function updateKeywordSelection() {
+      document.querySelectorAll(".keyword-node").forEach((node) => {
+        const key = keywordKey({ roomId: node.dataset.roomId, keyword: node.dataset.keyword });
+        node.classList.toggle("is-selected", selectedKeywords.some((item) => keywordKey(item) === key));
+      });
+    }
+
+    function updateBridgeComposer() {
+      removeBridgeLine();
+
+      if (selectedKeywords.length < 2) {
+        bridgeComposer.classList.remove("is-visible");
+        currentBridgeKey = "";
+        clearTalkOptions();
+        return;
+      }
+
+      const nextBridgeKey = selectedKeywords.map(keywordKey).join("||");
+      if (nextBridgeKey !== currentBridgeKey) {
+        currentBridgeKey = nextBridgeKey;
+        clearTalkOptions();
+      }
+
+      generatedInput.innerHTML = getBridgeCaption(selectedKeywords);
+      bridgeComposer.classList.add("is-visible");
+      drawBridgeLines(selectedKeywords);
+    }
+
+    function getBridgeCaption(selections) {
+      const names = selections.map((selection) => selection.keyword);
+      const tags = names.map((name, index) => {
+        const tag = `<span class="bridge-tag">${escapeHtml(name)}</span>`;
+        if (index === names.length - 1) return tag;
+        return `${tag} <span class="bridge-cross">x</span> `;
+      }).join("");
+      return `<span>What happen if we bridge</span> ${tags}`;
+    }
+
+    function getBridgeText(selections) {
+      const [first, second] = selections;
+      const candidates = [
+        rooms.find((room) => room.id === first.roomId),
+        rooms.find((room) => room.id === second.roomId)
+      ].filter(Boolean);
+
+      if (selections.length === 2) {
+        for (const room of candidates) {
+          const direct = `${first.keyword}|${second.keyword}`;
+          const reverse = `${second.keyword}|${first.keyword}`;
+          if (room.bridges[direct]) return room.bridges[direct];
+          if (room.bridges[reverse]) return room.bridges[reverse];
+        }
+      }
+
+      const names = selections.map((selection) => selection.keyword);
+      if (names.length === 2) {
+        return `When ${names[0]} and ${names[1]} collide, what uncomfortable tradeoff are we avoiding, and who should bear the cost of choosing one over the other?`;
+      }
+
+      const last = names.at(-1);
+      const prefix = names.slice(0, -1).join(", ");
+      return `If ${prefix}, and ${last} are all true at once, what belief becomes hardest to defend, and who benefits from not debating it?`;
+    }
+
+    async function toggleTalkOptions() {
+      if (talkOptions.classList.contains("is-visible")) {
+        clearTalkOptions();
+        return;
+      }
+      await generateTalkOptions();
+    }
+
+    async function generateTalkOptions() {
+      if (selectedKeywords.length < 2) return;
+
+      const bridge = getBridgePlainText(selectedKeywords);
+      const keywords = selectedKeywords.map((selection) => selection.keyword);
+      selectedTalkPrompt = "";
+      talkButton.disabled = true;
+      talkButton.textContent = "Thinking...";
+      renderTalkOptions(["Generating three possible rooms..."], true);
+
+      try {
+        const response = await fetch("/bridge-prompts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keywords, bridge_input: bridge })
+        });
+        if (!response.ok) throw new Error(`bridge prompt status ${response.status}`);
+        const data = await response.json();
+        const prompts = sanitizeTalkPrompts(data.prompts);
+        renderTalkOptions(prompts.length ? prompts : buildLocalTalkPrompts(selectedKeywords, bridge));
+      } catch (error) {
+        renderTalkOptions(buildLocalTalkPrompts(selectedKeywords, bridge));
+      } finally {
+        talkButton.disabled = false;
+        talkButton.textContent = "Fold";
+      }
+    }
+
+    function getBridgePlainText(selections) {
+      const names = selections.map((selection) => selection.keyword);
+      return `What happen if we bridge ${names.map((name) => `"${name}"`).join(" x ")}`;
+    }
+
+    function sanitizeTalkPrompts(prompts) {
+      if (!Array.isArray(prompts)) return [];
+      return prompts
+        .map((prompt) => String(prompt || "").trim())
+        .filter((prompt) => prompt.length > 24)
+        .slice(0, 3);
+    }
+
+    function renderTalkOptions(prompts, loading = false) {
+      talkPrompts = loading ? [] : prompts;
+      talkOptions.innerHTML = prompts.map((prompt, index) => `
+        <div class="talk-option-row">
+          <button class="talk-option" type="button" data-prompt-index="${index}" ${loading ? "disabled" : ""}>${escapeHtml(prompt)}</button>
+          ${!loading && selectedTalkPrompt === prompt ? renderConfirmCard() : ""}
+        </div>
+      `).join("");
+      talkOptions.classList.add("is-visible");
+
+      if (!loading) {
+        talkOptions.querySelectorAll(".talk-option").forEach((button) => {
+          button.classList.toggle("is-selected", button.textContent.trim() === selectedTalkPrompt);
+          button.addEventListener("click", () => selectTalkPrompt(Number(button.dataset.promptIndex)));
+        });
+        talkOptions.querySelectorAll("[data-confirm-prompt]").forEach((button) => {
+          button.addEventListener("click", confirmTalkPrompt);
+        });
+        talkOptions.querySelectorAll("[data-cancel-prompt]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedTalkPrompt = "";
+            renderTalkOptions(talkPrompts);
+          });
+        });
+      }
+    }
+
+    function renderConfirmCard() {
+      return `
+        <div class="confirm-card" role="group" aria-label="Confirm room input">
+          <p>Use this as your next thought?</p>
+          <div class="confirm-actions">
+            <button class="confirm-button primary" type="button" data-confirm-prompt>Confirm</button>
+            <button class="confirm-button" type="button" data-cancel-prompt>Cancel</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function selectTalkPrompt(index) {
+      selectedTalkPrompt = talkPrompts[index] || "";
+      renderTalkOptions(talkPrompts);
+    }
+
+    function clearTalkOptions() {
+      talkPrompts = [];
+      selectedTalkPrompt = "";
+      talkOptions.innerHTML = "";
+      talkOptions.classList.remove("is-visible");
+      if (talkButton) {
+        talkButton.disabled = false;
+        talkButton.textContent = "What can we talk";
+      }
+    }
+
+    function buildLocalTalkPrompts(selections, bridge) {
+      const keywords = selections.map((selection) => selection.keyword);
+      const roomsInBridge = new Set(selections.map((selection) => selection.roomId));
+      const has = (keyword) => keywords.includes(keyword);
+
+      if (roomsInBridge.size > 1) {
+        return [
+          "Who gets to say yes when the public cannot realistically opt out?",
+          "Should societies accept a solution that lowers one existential risk by creating another institution people have to trust for decades?",
+          "When technical success creates public dependence, does consent still mean anything?"
+        ];
+      }
+
+      if (has("Nuclear") || has("Climate") || has("Waste") || has("Future Generations")) {
+        return [
+          "Build nuclear now, or let heat do the killing?",
+          "Is it more ethical to leave future people a hotter planet or a radioactive inheritance managed by institutions that may not survive?",
+          "Should climate urgency let governments ask the public to trust waste plans that outlive every leader who approved them?"
+        ];
+      }
+
+      if (has("Google") || has("Capital") || has("Public Markets") || has("Monopoly")) {
+        return [
+          "Who should own the doorway to knowing?",
+          "When a company becomes the interface for human curiosity, should its control belong to founders, investors, users, or public institutions?",
+          "If Google had never gone public, would the internet be less extractive or just less accountable?"
+        ];
+      }
+
+      return [
+        "Who benefits when the real conflict is hidden inside a tidy question?",
+        "When a useful system demands a hidden sacrifice, who gets to call that sacrifice reasonable?",
+        "What kind of future becomes impossible when the safest choice and the most honest choice are no longer the same?"
+      ];
+    }
+
+    function confirmTalkPrompt() {
+      if (!selectedTalkPrompt) return;
+      sessionStorage.setItem("manyMinds.matrixPrefill", selectedTalkPrompt);
+      window.location.href = "index.html";
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function drawBridgeLines(selections) {
+      selections.slice(0, -1).forEach((selection, index) => {
+        drawBridgeLine(selection, selections[index + 1]);
+      });
+    }
+
+    function drawBridgeLine(first, second) {
+      const firstPoint = keywordPositions.get(keywordKey(first));
+      const secondPoint = keywordPositions.get(keywordKey(second));
+      if (!firstPoint || !secondPoint) return;
+
+      const line = createLine(firstPoint.x, firstPoint.y, secondPoint.x, secondPoint.y, "rgba(255,255,255,0.9)", "0.28", "1.2 1.1");
+      line.setAttribute("class", "bridge-line");
+      lineSvg.appendChild(line);
+    }
+
+    function removeBridgeLine() {
+      lineSvg.querySelectorAll(".bridge-line").forEach((line) => line.remove());
+    }
+
+    function clearBridge() {
+      selectedKeywords = [];
+      currentBridgeKey = "";
+      clearTalkOptions();
+      updateKeywordSelection();
+      updateBridgeComposer();
+    }
+
+    function showToast() {
+      toast.classList.add("is-visible");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("is-visible");
+      }, 2600);
+    }
+
+    let zoomSettleTimer = null;
+    function setZoom(nextZoom) {
+      zoom = clamp(nextZoom, 0.62, 1.62);
+      // GPU-promote the plane for the duration of the zoom transition, then drop
+      // the layer so the static render is seam-free.
+      atlasMap.classList.add("is-zooming");
+      if (zoomSettleTimer) clearTimeout(zoomSettleTimer);
+      zoomSettleTimer = setTimeout(() => atlasMap.classList.remove("is-zooming"), 340);
+      applyViewportTransform();
+      updateZoomDependentLayout();
+    }
+
+    function resetViewport() {
+      zoom = 1;
+      panX = 0;
+      panY = 0;
+      applyViewportTransform();
+      updateZoomDependentLayout();
+    }
+
+    function applyViewportTransform() {
+      zoomPlane.style.setProperty("--zoom", zoom.toFixed(2));
+      // Counter-scale nodes so dots/labels keep a constant, readable size while
+      // the plane scales. Positions are NOT recomputed on zoom (distanceScale is
+      // constant), so the bloom just scales with the camera — smooth, no jump.
+      zoomPlane.style.setProperty("--pin-scale", (1 / zoom).toFixed(3));
+      zoomPlane.style.setProperty("--pan-x", `${panX.toFixed(1)}px`);
+      zoomPlane.style.setProperty("--pan-y", `${panY.toFixed(1)}px`);
+      updateFieldLabelAnchors();
+    }
+
+    function updateFieldLabelAnchors() {
+      const map = atlasMap.getBoundingClientRect();
+      const layer = document.querySelector(".field-label-layer");
+      if (!layer || !map.width || !map.height) return;
+
+      // Derive label spots from the live ellipse geometry so each title sits in
+      // its domain's exclusive outer lobe (not the central overlap), at any aspect.
+      const { g, W, H } = fieldGeometries();
+      const asPct = (key) => ({
+        cx: (g[key].cx / W) * 100,
+        cy: (g[key].cy / H) * 100,
+        rx: (g[key].a / W) * 100,
+        ry: (g[key].b / H) * 100
+      });
+      const M = asPct("M");
+      const P = asPct("P");
+      const Psy = asPct("Psy");
+      const targets = {
+        M: { x: M.cx - M.rx * 0.64, y: M.cy - M.ry * 0.5 },
+        P: { x: P.cx + P.rx * 0.64, y: P.cy - P.ry * 0.5 },
+        Psy: { x: Psy.cx, y: Psy.cy + Psy.ry * 0.82 }
+      };
+
+      const pad = 12;
+      document.querySelectorAll(".field-label").forEach((label) => {
+        const target = targets[label.dataset.field];
+        if (!target) return;
+
+        const rawX = map.width / 2 + panX + ((target.x - 50) / 100) * map.width * zoom;
+        const rawY = map.height / 2 + panY + ((target.y - 50) / 100) * map.height * zoom;
+        const rect = label.getBoundingClientRect();
+        const width = rect.width || 120;
+        const height = rect.height || 14;
+
+        const left = clamp(rawX - width / 2, pad, map.width - width - pad);
+        const top = clamp(rawY - height / 2, pad, map.height - height - pad);
+
+        label.style.left = `${left.toFixed(1)}px`;
+        label.style.top = `${top.toFixed(1)}px`;
+        label.style.transform = "none";
+      });
+    }
+
+    function updateZoomDependentLayout() {
+      // Zoom is a pure camera transform now — the whole plane (nodes, lines,
+      // ellipses) scales uniformly via CSS. Re-running the bloom physics here is
+      // what made zoom feel jumpy, so we don't. Only keep the bridge line synced.
+      if (expandedRooms.size) {
+        updateBridgeComposer();
+      }
+    }
+
+    function getBloomDistanceScale() {
+      // Constant: the bloom is laid out once and scales with the camera, so its
+      // radius must not depend on zoom (that dependency caused the jump-on-zoom).
+      return 1;
+    }
+
+    function startCanvasPan(event) {
+      if (event.button !== 0) return;
+      if (event.target.closest(".room-node, .keyword-node, .atlas-toolbar, .detail-panel, .bridge-composer")) return;
+
+      draggingCanvas = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        panX,
+        panY
+      };
+
+      atlasMap.classList.add("is-panning");
+      atlasMap.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", onCanvasPan);
+      window.addEventListener("pointerup", endCanvasPan, { once: true });
+      window.addEventListener("pointercancel", endCanvasPan, { once: true });
+    }
+
+    function onCanvasPan(event) {
+      if (!draggingCanvas || event.pointerId !== draggingCanvas.pointerId) return;
+      panX = draggingCanvas.panX + event.clientX - draggingCanvas.startX;
+      panY = draggingCanvas.panY + event.clientY - draggingCanvas.startY;
+      applyViewportTransform();
+    }
+
+    function endCanvasPan(event) {
+      if (!draggingCanvas || event.pointerId !== draggingCanvas.pointerId) return;
+      atlasMap.classList.remove("is-panning");
+      window.removeEventListener("pointermove", onCanvasPan);
+      window.removeEventListener("pointercancel", endCanvasPan);
+      draggingCanvas = null;
+    }
+
+    function startRoomDrag(event, roomId) {
+      if (fieldsVisible || event.button !== 0) return;
+
+      const base = freePositions.get(roomId) || rooms.find((room) => room.id === roomId);
+      if (!base) return;
+
+      const node = event.currentTarget;
+      draggingRoom = {
+        id: roomId,
+        node,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseX: base.x,
+        baseY: base.y,
+        moved: false
+      };
+
+      const offset = floatOffsets.get(roomId);
+      if (offset) {
+        offset.x = 0;
+        offset.y = 0;
+      }
+
+      node.classList.add("is-dragging");
+      atlasMap.classList.add("is-dragging-room");
+      if (node.setPointerCapture) node.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", onRoomDrag);
+      window.addEventListener("pointerup", endRoomDrag, { once: true });
+      window.addEventListener("pointercancel", endRoomDrag, { once: true });
+    }
+
+    function onRoomDrag(event) {
+      if (!draggingRoom || event.pointerId !== draggingRoom.pointerId) return;
+
+      const rect = atlasMap.getBoundingClientRect();
+      const deltaX = (event.clientX - draggingRoom.startX) / (rect.width * zoom) * 100;
+      const deltaY = (event.clientY - draggingRoom.startY) / (rect.height * zoom) * 100;
+
+      if (Math.hypot(event.clientX - draggingRoom.startX, event.clientY - draggingRoom.startY) > 3) {
+        draggingRoom.moved = true;
+      }
+
+      freePositions.set(draggingRoom.id, {
+        x: clamp(draggingRoom.baseX + deltaX, 1.5, 98.5),
+        y: clamp(draggingRoom.baseY + deltaY, 1.5, 98.5)
+      });
+
+      updateRoomNodePositions();
+      updateBloomPositions();
+      updateBridgeComposer();
+    }
+
+    function endRoomDrag(event) {
+      if (!draggingRoom || event.pointerId !== draggingRoom.pointerId) return;
+
+      draggingRoom.node.classList.remove("is-dragging");
+      atlasMap.classList.remove("is-dragging-room");
+      window.removeEventListener("pointermove", onRoomDrag);
+      window.removeEventListener("pointercancel", endRoomDrag);
+      if (draggingRoom.moved) {
+        dragSuppressClick = true;
+        window.setTimeout(() => {
+          dragSuppressClick = false;
+        }, 0);
+      }
+      draggingRoom = null;
+    }
+
+    function startFreeMotion() {
+      if (freeMotionFrame) return;
+
+      const tick = (time) => {
+        if (fieldsVisible) {
+          freeMotionFrame = null;
+          return;
+        }
+
+        rooms.forEach((room, index) => {
+          if (draggingRoom && draggingRoom.id === room.id) return;
+          const offset = floatOffsets.get(room.id);
+          if (!offset) return;
+          const t = time / 1000 + offset.phase;
+          offset.x = Math.sin(t * 0.55 + index) * 0.42;
+          offset.y = Math.cos(t * 0.48 + index * 0.7) * 0.34;
+        });
+
+        updateRoomNodePositions();
+        if (expandedRooms.size) {
+          updateBloomPositions();
+          updateBridgeComposer();
+        }
+
+        freeMotionFrame = requestAnimationFrame(tick);
+      };
+
+      freeMotionFrame = requestAnimationFrame(tick);
+    }
+
+    function stopFreeMotion() {
+      if (freeMotionFrame) {
+        cancelAnimationFrame(freeMotionFrame);
+        freeMotionFrame = null;
+      }
+      floatOffsets.forEach((offset) => {
+        offset.x = 0;
+        offset.y = 0;
+      });
+    }
+
+    function createLine(x1, y1, x2, y2, stroke, width, dash) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", stroke);
+      line.setAttribute("stroke-width", width);
+      line.setAttribute("vector-effect", "non-scaling-stroke");
+      line.setAttribute("stroke-linecap", "round");
+      if (dash) line.setAttribute("stroke-dasharray", dash);
+      return line;
+    }
+
+    function keywordKey(selection) {
+      return `${selection.roomId}|${selection.keyword}`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    init();
+  </script>
+  <script src="js/theme.js"></script>
+</body>
+</html>

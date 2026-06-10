@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds · Room Showcase</title>
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/room.css?v=4" />
+</head>
+<body>
+  <div class="experience-screen" id="experienceScreen">
+<div class="experience-image"></div>
+  <div class="experience-overlay"></div>
+  <button class="back-button" aria-label="Back to landing">←</button>
+  <div class="live-status"><span class="live-dot"></span><span id="liveStatusText">Showcase</span></div>
+
+  <div class="name-label human" style="left: 27.1%; top: 36.4%;">Me</div>
+  <div class="name-label human invite-only is-hidden" style="left: 50.8%; top: 55.8%;">Friend</div>
+  <div class="name-label ai" style="left: 35.2%; top: 23.4%;">Zi Yu</div>
+  <div class="name-label ai" style="left: 46.4%; top: 23.4%;">Emma</div>
+  <div class="name-label ai" style="left: 58.4%; top: 25.7%;">Luke</div>
+  <div class="name-label ai" style="left: 39.8%; top: 52.1%;">Mark</div>
+  <div class="name-label ai" style="left: 67.4%; top: 45.7%;">Alex</div>
+
+  <button class="character-hotspot" data-character="Zi Yu" style="left: 34.5%; top: 38%;"></button>
+  <button class="character-hotspot" data-character="Emma" style="left: 44%; top: 35%;"></button>
+  <button class="character-hotspot" data-character="Luke" style="left: 55.5%; top: 39%;"></button>
+  <button class="character-hotspot" data-character="Mark" style="left: 38%; top: 62%;"></button>
+  <button class="character-hotspot" data-character="Alex" style="left: 64%; top: 58%;"></button>
+
+  <div class="speech-layer" id="speechLayer"></div>
+
+  <div class="profile-card" id="profileCard">
+    <h3 id="profileName">Maya</h3>
+    <div class="profile-age" id="profileAge">Room host</div>
+    <div class="host-badge" id="hostBadge">Host</div>
+    <ul id="profileBullets"></ul>
+    <div class="profile-mood" id="profileMood"></div>
+
+    <div class="profile-actions">
+      <button class="profile-action primary" id="callCharacterButton">Call into conversation</button>
+      <button class="profile-action" id="privateConversationButton">Talk privately</button>
+    </div>
+  </div>
+
+  <aside class="history-panel" id="historyPanel">
+    <div class="history-header">
+      <h3>Conversation History</h3>
+      <button class="history-toggle" id="historyToggle" aria-label="Toggle conversation history">−</button>
+    </div>
+    <div class="history-content" id="roomLog">
+      <div class="history-item"><strong>Room:</strong> The conversation will appear here.</div>
+    </div>
+  </aside>
+
+  <button class="compare-button invite-only is-hidden" id="compareButton">Compare our framings</button>
+  <button class="rest-button" id="restButton">Call for a break</button>
+
+  <!-- §3d: the single affordance for a turn addressed to the user. Hidden
+       until a character turns to you; clicking it lets the room continue. -->
+  <button class="ignore-button" id="ignoreButton" type="button"
+          aria-label="Ignore this question and let the room continue">Ignore</button>
+
+  <div class="user-input-card" id="userInputCard">
+    <div class="uic-label">Your thought</div>
+    <div class="uic-text" id="userInputText">…</div>
+  </div>
+
+  <div class="input-bar">
+    <textarea class="room-input" id="roomInput" wrap="off" placeholder="Think privately, or tell the room you have something to say."></textarea>
+    <button class="floor-button" id="floorButton">I have something to say</button>
+    <button class="send-button" id="sendButton">Send</button>
+  </div>
+  </div>
+
+  <!-- Placeholder DATA only — no functions. room.js detects __MM_SHOWCASE__ and
+       replays these turns through the live room's own render paths (bubbles,
+       typing, stacking, fade, history log, profile-card, cue rules).
+
+       NOTE (honest): this is a DIALOGUE-LAYER sample, not composer output. The
+       short "micro-beats" ("go on", "…hm", "which is?") are hardcoded here. In a
+       real room they'd be orchestrator-triggered §8a/§8e turn-directives
+       (short-beat / agree-and-pass / continue-prompt) — the current spec doesn't
+       yet make those micro-beat trigger rules concrete (a §8a refinement to add).
+       28 turns = 14 content turns split open by 14 micro-beats / short turns so
+       no long turn runs more than ~5 lines before a listener breaks it.
+
+       §3d DEMO INJECTION: the three turns flagged `toUser: true` (Yael, Maya,
+       Anna) make a character turn to YOU. Strictly this is an inquiry room
+       (user_role = observer), which §3d says adds NO user-facing niche — a
+       faithful inquiry room wouldn't solicit the observer. These are injected
+       purely to exercise the user-facing-turn UI: each one pops up a single
+       "Ignore" button; answering is the normal type-and-Send; 30s of silence
+       counts too; after two ignores/timeouts the room stops turning to you and
+       the third (Anna) renders with no button. -->
+  <script>
+    window.__MM_SHOWCASE__ = {
+      belief: "What if Google didn't go IPO? What would Internet look like today?",
+      characters: [
+        { id: "user", name: "You", is_user: true },
+        { id: "maya", name: "Maya", is_host: true,
+          role: "Historian of capital flows · frame-breaker",
+          bullets: ["Reads markets as gradients, not heroes", "Bets the slot gets filled — only the name on the door changes"],
+          mood: "Pushing the room off the great-man version of the question." },
+        { id: "salim", name: "Salim",
+          role: "Historian of failed networks · marginal-illuminator",
+          bullets: ["Minitel, Geocities, dial-up BBS scenes", "Other internets existed — and all lost the same way"],
+          mood: "Bringing the case nobody else would think to bring." },
+        { id: "hiro", name: "Hiro",
+          role: "Undersea-cable engineer · counterfactual-elaborator",
+          bullets: ["Lays the physical layer", "Five years of buildout isn't a name change"],
+          mood: "Refusing to let the room skip the cables." },
+        { id: "yael", name: "Yael",
+          role: "Political economist of platform power · premise-challenger",
+          bullets: ["Asks who holds the chokepoint", "Different rent-collector, different politics"],
+          mood: "Reframing 'what' into 'who'." },
+        { id: "anna", name: "Anna",
+          role: "Historian of the stories markets tell · meaning-layer",
+          bullets: ["The IPO made the internet a story capital underwrote", "Watches what gets priced, not just what gets built"],
+          mood: "Listening for the story underneath the pipes." }
+      ],
+      cueReplies: {
+        "Maya": "Asking me? Then I'll hold the line — somebody fills Google's slot regardless, only the name on the door changes. Tell me which part of that you don't buy.",
+        "Salim": "Me — alright. I'd point you to Minitel: there have been other internets, and they lost to openness, not to Google. Where does that leave your question?",
+        "Hiro": "You're asking me, so I'll be blunt — someone still has to lay the cable. Take Google out and you lose five years of buildout. Where do you stand on that?",
+        "Yael": "Straight at me? Good. The question I keep handing back: not what the internet looks like, but who ends up holding the chokepoint. So — who?",
+        "Anna": "Me, directly? Then the part nobody's named: the IPO turned the internet into a story capital would underwrite. Take that story out and everything reprices."
+      },
+      defaultReply: "No name, so I'll take it as the one who opened — call any of us (Maya, Salim, Hiro, Yael, Anna) to put it to them directly. My standing claim: somebody fills the slot; only the name on the door changes.",
+      turns: [
+        { speaker: "Maya", text: "Before anyone says “without Google, no internet as we know it” — pause. The question assumes Google did something only Google could do. I don't think that's true." },
+        { speaker: "Yael", text: "Go on." },
+        { speaker: "Maya", text: "If Larry and Sergey had stayed private, or sold to Yahoo in 2002 like they almost did, somebody fills that slot. The economics were pulling. A search company gets there. The name on the door would be different. Most other things wouldn't." },
+        { speaker: "Hiro", text: "No. Maya, that's the software-person mistake. Code is replaceable. Cables aren't." },
+        { speaker: "Anna", text: "…hm." },
+        { speaker: "Hiro", text: "Google didn't just buy ads. They bought time. 2004 IPO money built private undersea routes, dark fiber across the US, datacenters that drew more power than small cities — five years before any “Hooli” would've had the capital to do it. Some Hooli arrives, sure. But the internet runs on whatever physical layer existed when video took off. Replace the company, you still lose those five years. Five years in infrastructure isn't a name change. It's a different internet." },
+        { speaker: "Yael", text: "Both of you are answering the wrong question." },
+        { speaker: "Maya", text: "Which is?" },
+        { speaker: "Yael", text: "“What would the internet look like” — look like to whom. You're imagining the user-facing surface: was search free, were videos fast. The real counterfactual isn't UX. It's: who would have ended up holding the chokepoint?" },
+        { speaker: "Anna", text: "Keep going." },
+        { speaker: "Yael", text: "Somebody was going to. The shape of the network forces a chokepoint — somewhere between the user and the answer, someone stands and charges rent. Google charged in attention. A non-IPO Google charges in subscription, smaller richer slice of the world uses it. Or the cable company charges, and ISPs decide what you can search. Or a government does it openly instead of through a company. Different chokepoint, different politics. Who is the question. Not whether." },
+        { speaker: "Yael", text: "You asked this question — so I'll put it back to you. Who do you think ends up holding the chokepoint?", toUser: true },
+        { speaker: "Anna", text: "Yael's right that something fills the slot. But you're all still talking about it as a thing — pipes, cash, who collects the rent." },
+        { speaker: "Hiro", text: "…where are you going." },
+        { speaker: "Anna", text: "The IPO did something none of you have named. It made “the internet” into a story that capital markets would underwrite. Before 2004, the dot-com crash had taught everyone the internet was a place where money goes to die. After Google's IPO, the internet became a place where money compounds. That story — not the cables, not the company — is what brought every other investment behind it. Mobile, cloud, social. They all priced themselves against that one moment." },
+        { speaker: "Salim", text: "Can I bring in something concrete. France had Minitel. Operational from 1982. Twenty-five million users at peak. State-backed, terminals given out free, businesses paid by the minute. It worked. People banked, dated, booked trains. It was an internet." },
+        { speaker: "Yael", text: "Huh. Keep going." },
+        { speaker: "Salim", text: "Then the open Web arrived and Minitel didn't die from being worse. It died from being enclosed — one operator, one country, one stack. It couldn't compose with anything outside itself. I'm not saying Minitel was good. I'm saying: there have been other internets, and they all lost to the same thing. Not Google. Openness as a commercial weapon. Whatever fills Google's slot wins the same way — or doesn't win." },
+        { speaker: "Maya", text: "…Salim, that helps me. The slot isn't “search company.” It's “the actor willing to be open enough to compose with everything else.” That's a narrower bar." },
+        { speaker: "Maya", text: "You've heard all of us now. Does “only the name on the door changes” sound right to you, or too neat?", toUser: true },
+        { speaker: "Yael", text: "Narrower, but still filled. By whom, Maya." },
+        { speaker: "Hiro", text: "That's where I have to push back on Maya again. “Whoever fills the slot” still has to lay the cable. I keep coming back to this because everyone wants to skip it. In 2004 there were maybe three actors on Earth who could've done the physical buildout at that pace — Google, the Chinese state, and AT&T. Take Google out, AT&T does it slower and tolled. China does it walled. Neither is the internet you're using to read this." },
+        { speaker: "Anna", text: "Hiro. Wait." },
+        { speaker: "Hiro", text: "…yeah." },
+        { speaker: "Anna", text: "You just said something I hadn't put together. The three actors you named — a public company, a state, a regulated monopoly. Each builds the same cables but the cables mean different things. Google's fiber is “free for everyone who watches ads.” China's fiber is “free for everyone we let on.” AT&T's fiber is “available for whoever pays the meter.” So the counterfactual isn't a slower internet or a worse one. It's an internet where the terms of access would be legible — a meter you can see, a wall you can see — instead of invisible, the way attention-extraction is invisible." },
+        { speaker: "Anna", text: "I'm not sure if that's better. I think it might be more honest." },
+        { speaker: "Yael", text: "It's more honest because there's someone to be angry at." },
+        { speaker: "Salim", text: "That, I'd take. Minitel was awful in plenty of ways. But you knew it was France. You knew who to write to. The thing about the internet we actually got is the chokepoint disappeared into the air. It feels like nothing is charging you." },
+        { speaker: "Maya", text: "…oh." },
+        { speaker: "Salim", text: "Then you realize you've been the product the whole time, and there's no door to knock on. Maybe the no-IPO internet is smaller. Slower. More walled. But you can find the wall." },
+        { speaker: "Anna", text: "Last thing, and it's to you: if the wall were visible — a toll you could see — would you take that internet over the one we got?", toUser: true }
+      ]
+    };
+  </script>
+  <script src="js/room.js?v=7"></script>
+</body>
+</html>

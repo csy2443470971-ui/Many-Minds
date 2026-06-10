@@ -1,0 +1,743 @@
+.experience-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: auto;
+  background: #0a090b;
+  overflow: hidden;
+}
+
+.experience-image {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.06), rgba(0,0,0,.18)),
+    url('../assets/pixel-room-reference.png');
+  background-size: cover;
+  background-position: center 48%;
+  image-rendering: auto;
+  transform: scale(1.01);
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+.experience-image::before {
+  content: none;
+}
+
+.experience-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 52% 45%, transparent 0 38%, rgba(0,0,0,.2) 75%),
+    linear-gradient(to bottom, rgba(0,0,0,.02), rgba(0,0,0,.18));
+  pointer-events: none;
+}
+
+@keyframes drift {
+  from { transform: scale(1.01) translateY(0px); }
+  to { transform: scale(1.025) translateY(-5px); }
+}
+
+.experience-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, transparent 24%, rgba(0,0,0,.18) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,.04), rgba(0,0,0,.2));
+}
+
+.speech-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 14;
+}
+
+.speech {
+  --bubble-offset-x: -50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(var(--bubble-offset-x), calc(-100% - 12px - var(--stack-up, 0px)));
+  box-sizing: border-box;
+  width: fit-content;
+  min-width: 132px;
+  max-width: min(340px, 28vw);
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(200,140,255,.45);
+  background: rgba(18,10,20,.72);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 44px rgba(0,0,0,.32);
+  animation: bubbleIn .8s cubic-bezier(.19,1,.22,1);
+  transition: opacity .25s ease, filter .25s ease, transform .25s ease;
+}
+
+.speech.challenge {
+  border-color: rgba(242,199,120,.56);
+  box-shadow: 0 18px 64px rgba(216,168,95,.18), 0 18px 56px rgba(0,0,0,.36);
+}
+
+.speech.user-turn {
+  border-color: rgba(145,214,164,.55);
+  background: rgba(9,26,18,.76);
+}
+
+.speech.preparing {
+  min-width: 52px;
+  padding: 6px 9px;
+  border-color: rgba(244,236,226,.28);
+  background: rgba(18,10,20,.58);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28);
+}
+
+.speech.preparing p {
+  font-size: 13px;
+  letter-spacing: .08em;
+  color: rgba(244,236,226,.76);
+}
+
+.speech.stilled {
+  opacity: 0;
+  filter: saturate(.65);
+  transform: translate(var(--bubble-offset-x), calc(-100% - 5px - var(--stack-up, 0px))) scale(.98);
+  transition: opacity 1s ease, filter 1s ease, transform 1s ease;
+}
+
+.speech::after {
+  content: none;   /* no tail / black arrow */
+}
+
+.interrupt-badge {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(242,199,120,.42);
+  color: #f0c982;
+  background: rgba(216,168,95,.12);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.experience-screen.paused .speech-layer {
+  opacity: .46;
+  filter: saturate(.7);
+}
+
+.speech-name {
+  color: #d4a2ff;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.speech p {
+  margin: 0;
+  max-width: 100%;
+  line-height: 1.35;
+  color: rgba(244,236,226,.92);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.speech-emphasis {
+  font-size: 1.08em;
+  font-weight: 850;
+  color: rgba(255,238,206,.96);
+}
+
+.speech-quote {
+  font-style: italic;
+  color: rgba(244,236,226,.86);
+}
+
+.speech-fragment {
+  color: rgba(244,236,226,.58);
+  font-style: italic;
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translate(var(--bubble-offset-x), calc(-100% + 2px - var(--stack-up, 0px))) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--bubble-offset-x), calc(-100% - 12px - var(--stack-up, 0px))) scale(1);
+  }
+}
+
+.input-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 60px));
+  min-height: 72px;
+  border-radius: 22px;
+  border: 1px solid rgba(208,148,255,.34);
+  background: rgba(18,10,20,.78);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.35);
+}
+
+.room-input {
+  flex: 1;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  resize: none;
+  white-space: nowrap;      /* single line — no wrapping */
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 0;
+  outline: 0;
+  background: rgba(255,255,255,.035);
+  color: rgba(244,236,226,.94);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.room-input::placeholder {
+  color: rgba(244,236,226,.48);
+}
+
+/* ── User-input card: the thought the user brought into the room. Sits on the
+   bottom row, far left, alongside the input bar. Populated by room.js from the
+   user's claim; static placeholder in room_showcase.html. ── */
+.user-input-card {
+  position: absolute;
+  left: 24px;
+  bottom: 34px;
+  width: 216px;
+  max-width: 24vw;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(208,148,255,.30);
+  background: rgba(18,10,20,.72);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.30);
+  z-index: 16;
+}
+
+.user-input-card .uic-label {
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(208,148,255,.80);
+}
+
+.user-input-card .uic-text {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: rgba(220,205,242,.74);  /* pale lavender — brighter, lower saturation */
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.floor-button,
+.send-button {
+  min-width: 112px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(208,148,255,.3);
+  background: rgba(255,255,255,.04);
+  color: rgba(244,236,226,.9);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.floor-button.active {
+  border-color: rgba(145,214,164,.48);
+  background: rgba(145,214,164,.12);
+  color: #d8f3df;
+}
+
+.send-button {
+  min-width: 72px;
+  background: linear-gradient(135deg, #f2c778, #d8a85f);
+  color: #18110d;
+  border-color: rgba(216,168,95,.8);
+}
+
+.profile-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 202px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(216,168,95,.38);
+  background: rgba(18,10,12,.76);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 52px rgba(0,0,0,.34);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .22s ease, transform .22s ease;
+  z-index: 30;
+}
+
+.profile-card.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.profile-card h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #e3af58;
+}
+
+.profile-age {
+  margin-top: 3px;
+  color: rgba(244,236,226,.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-card ul {
+  margin: 11px 0 0;
+  padding-left: 15px;
+  color: rgba(244,236,226,.82);
+  line-height: 1.42;
+  font-size: 12px;
+}
+
+.profile-mood {
+  margin-top: 10px;
+  color: rgba(244,236,226,.66);
+  font-size: 12px;
+  line-height: 1.35;
+  font-style: italic;
+}
+
+.host-badge {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(216,168,95,.35);
+  background: rgba(216,168,95,.12);
+  color: #e3af58;
+  font-size: 11px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.history-panel {
+  position: absolute;
+  top: 62px;
+  right: 30px;
+  width: 290px;
+  height: min(60vh, 500px);
+  border-radius: 22px;
+  border: 1px solid rgba(216,168,95,.42);
+  background: rgba(12,8,7,.52);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 70px rgba(0,0,0,.32);
+  padding: 18px;
+  /* Batch 4 (post-test history scroll fix): flex column so .history-content
+     can flex-grow + scroll within the panel's fixed height instead of
+     getting clipped by the panel's overflow:hidden. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+  transition: width .28s ease, height .28s ease, padding .28s ease, opacity .28s ease;
+}
+
+/* Batch 4 (post-test history scroll fix): scrollable content area. */
+.history-content {
+  flex: 1 1 auto;
+  min-height: 0; /* required so flex item can shrink below content height */
+  overflow-y: auto;
+  padding-right: 6px; /* room for scrollbar */
+}
+.history-content::-webkit-scrollbar {
+  width: 6px;
+}
+.history-content::-webkit-scrollbar-thumb {
+  background: rgba(216, 168, 95, 0.35);
+  border-radius: 3px;
+}
+.history-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history-panel.collapsed {
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border-radius: 18px;
+  overflow: visible;
+}
+
+.history-panel.collapsed .history-content,
+.history-panel.collapsed h3 {
+  display: none;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.history-panel.collapsed .history-header {
+  margin: 0;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+}
+
+.history-panel h3 {
+  margin: 0;
+  color: #e3af58;
+  font-size: 16px;
+}
+
+.history-toggle {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.05);
+  color: rgba(244,236,226,.82);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.history-panel.collapsed .history-toggle {
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(216,168,95,.42);
+  border-radius: 18px;
+  background: rgba(12,8,7,.52);
+  backdrop-filter: blur(18px);
+  color: #e3af58;
+  font-size: 20px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.28);
+}
+
+.history-item {
+  border-left: 2px solid rgba(216,168,95,.28);
+  padding: 0 0 16px 12px;
+  margin-bottom: 12px;
+  color: rgba(244,236,226,.72);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.history-item strong {
+  color: rgba(244,236,226,.9);
+}
+
+.character-hotspot {
+  position: absolute;
+  width: 74px;
+  height: 110px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.character-hotspot:hover {
+  border-color: rgba(216,168,95,.34);
+  background: rgba(216,168,95,.06);
+  box-shadow: 0 0 30px rgba(216,168,95,.16);
+}
+
+.name-label {
+  position: absolute;
+  transform: translateX(-50%);
+  color: #e3c5ff;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0,0,0,.7);
+  z-index: 16;
+  pointer-events: none;
+}
+
+.name-label.human {
+  color: var(--accent);
+}
+
+.name-label::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 4px auto 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #a886ff;
+  opacity: .85;
+}
+
+.name-label.human::after {
+  border-top-color: var(--accent);
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.back-button {
+  position: absolute;
+  top: 26px;
+  left: 28px;
+  width: 54px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(8,7,8,.42);
+  backdrop-filter: blur(14px);
+  color: rgba(244,236,226,.84);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  z-index: 20;
+  cursor: pointer;
+}
+
+.compare-button {
+  position: absolute;
+  right: 30px;
+  bottom: 180px;
+  width: 220px;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(216,168,95,.36);
+  background: rgba(216,168,95,.1);
+  color: #f2d8ae;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.26);
+  z-index: 18;
+}
+
+.compare-button:hover {
+  border-color: rgba(216,168,95,.58);
+  background: rgba(216,168,95,.16);
+}
+
+.rest-button {
+  position: absolute;
+  right: 30px;
+  bottom: 34px;            /* moved down — sits on the input-bar row, parallel to the input box */
+  width: 150px;
+  height: 52px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(216,168,95,.42);
+  background: linear-gradient(135deg, rgba(216,168,95,.28), rgba(18,10,12,.78));
+  backdrop-filter: blur(18px);
+  color: #f2d8ae;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .01em;
+  z-index: 16;
+  cursor: pointer;
+  box-shadow: 0 20px 54px rgba(0,0,0,.34);
+  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.rest-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(216,168,95,.62);
+  background: linear-gradient(135deg, rgba(216,168,95,.38), rgba(18,10,12,.84));
+}
+
+.experience-screen.paused .rest-button {
+  background: linear-gradient(135deg, #f2c778, #d8a85f);
+  border-color: rgba(216,168,95,.82);
+  color: #18110d;
+}
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.profile-action {
+  width: 100%;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(244,236,226,.9);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.profile-action:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.22);
+}
+
+.profile-action.primary {
+  border-color: rgba(168,134,255,.34);
+  background: linear-gradient(135deg, rgba(168,134,255,.22), rgba(28,18,36,.78));
+  color: #e8dbff;
+}
+
+.profile-action.primary:hover {
+  border-color: rgba(168,134,255,.58);
+  background: linear-gradient(135deg, rgba(168,134,255,.34), rgba(28,18,36,.9));
+}
+
+.live-status {
+  position: absolute;
+  left: 154px;
+  top: 26px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(8,7,8,.36);
+  backdrop-filter: blur(14px);
+  color: rgba(244,236,226,.8);
+  font-size: 12px;
+  z-index: 20;
+}
+
+.experience-screen.interrupted .live-status {
+  border-color: rgba(242,199,120,.42);
+  color: #f0c982;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #91d6a4;
+  box-shadow: 0 0 12px rgba(145,214,164,.7);
+}
+
+.experience-screen.paused .live-dot {
+  background: #e3af58;
+  box-shadow: 0 0 12px rgba(227,175,88,.7);
+}
+
+
+@keyframes profileFloat {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   §3d user-facing turn — a character turning to address YOU (not another
+   character). Two things only: (1) the turn must read "this one is for me,"
+   and (2) a single low-emphasis "Ignore" button pops up by the input bar.
+   Answering is just the normal type-and-Send; no other chrome.
+
+   Dark room only (one background). Green threads the "you" axis: the user's
+   own bubble (.user-turn) is green-filled at the Me seat; a turn TO the user
+   keeps the dark bubble at the speaker's seat but gains a green-tinted accent
+   and a "→ you" tag — distinct from a plain lavender turn and from the user's
+   own bubble.
+   ────────────────────────────────────────────────────────────────────────── */
+.speech.to-user {
+  border-color: rgba(145,214,164,.5);
+  box-shadow: 0 16px 54px rgba(145,214,164,.13), 0 16px 48px rgba(0,0,0,.34);
+}
+
+.speech.to-user .speech-name {
+  color: #bfe9cd;
+}
+
+.to-you-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(145,214,164,.5);
+  background: rgba(145,214,164,.14);
+  color: #d4f0dc;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  vertical-align: middle;
+}
+
+/* The one affordance: a single ghost "Ignore" pill that fades in just above
+   the input bar while a user-facing turn waits. Low-emphasis on purpose — it
+   must never compete with answering. Keyboard-reachable (Tab → Enter). */
+.ignore-button {
+  position: absolute;
+  left: 50%;
+  bottom: 112px;
+  transform: translateX(-50%) translateY(6px);
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(244,236,226,.20);
+  background: rgba(18,10,20,.66);
+  backdrop-filter: blur(14px);
+  color: rgba(244,236,226,.64);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease, color .18s ease, border-color .18s ease;
+  z-index: 17;
+}
+
+.ignore-button.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ignore-button:hover {
+  color: rgba(244,236,226,.92);
+  border-color: rgba(244,236,226,.34);
+}
+
+.ignore-button:focus-visible {
+  outline: 2px solid rgba(208,148,255,.65);
+  outline-offset: 2px;
+}

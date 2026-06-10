@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Many Minds</title>
+  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('mm-theme')||'dark')}catch(e){}</script>
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <a class="brand" href="index.html">
+        <div class="brand-mark">M</div>
+        <div class="brand-name">Many Minds</div>
+      </a>
+      <button class="theme-toggle" type="button" aria-label="Switch to light theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+      </button>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item active" href="index.html">Home</a>
+      <a class="nav-item " href="minds-matrix.html">My Room Matrix</a>
+      <a class="nav-item " href="me.html">Me</a>
+      <a class="nav-item " href="community.html">Community</a>
+    </div>
+  </nav>
+  <div class="landing-screen" id="landingScreen">
+
+  <main class="page">
+    <section class="copy">
+      <div class="door-bg"></div>
+      <h1>Explore the thoughts you haven’t thought yet.</h1>
+      <p class="sub">Enter a belief, question, or thought with no clear answer. Step into a room of unfamiliar minds and hear the perspectives you might never reach alone.</p>
+
+      <div class="input-wrap">
+        <label class="field-label" for="beliefInput">Your thought</label>
+        <div class="thought-field">
+          <textarea id="beliefInput" aria-describedby="thoughtExamples"></textarea>
+          <div class="thought-examples" id="thoughtExamples" aria-hidden="true">
+            <div class="thought-example-track">
+              <span>What if Google didn't go IPO? What would Internet look like today?</span>
+              <span>Nobody can love anyone forever.</span>
+              <span>Should we rapidly expand nuclear power to fight climate change?</span>
+              <span>Language is a cage that shapes what you can think of.</span>
+              <span>What if Google didn't go IPO? What would Internet look like today?</span>
+            </div>
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="enter">Enter the Room</button>
+          <button class="invite-toggle" type="button" id="inviteToggle" aria-expanded="false">Invite a friend</button>
+        </div>
+        <div class="invite-panel" id="invitePanel" aria-live="polite">
+          <p>Share this link and your friend steps into the same room with you.</p>
+          <div class="invite-link-row">
+            <input class="invite-link" id="inviteLink" type="text" readonly aria-label="Invite link" />
+            <button class="copy-link" type="button" id="copyLink">Copy link</button>
+          </div>
+          <div class="invite-waiting">
+            <div class="avatar-stack" aria-hidden="true">
+              <span class="avatar avatar-you">You</span>
+              <span class="avatar avatar-pending"></span>
+            </div>
+            <span class="waiting-text">Waiting for your friend to join…</span>
+          </div>
+        </div>
+      </div>
+    <div class="scroll-indicator"></div>
+    </section>
+
+    <section class="room-card" aria-label="Preview of a warm living room conversation">
+      <div class="room-bg"></div>
+      <div class="window"></div>
+      <div class="lamp"></div>
+      <div class="sofa"></div>
+      <div class="table-glow"></div>
+      <div class="table"></div>
+      <div class="person p1"></div>
+      <div class="person p2"></div>
+      <div class="person p3"></div>
+      <div class="person p4"></div>
+      <div class="person p5"></div>
+      <div class="person p6"></div>
+      <div class="person p7"></div>
+      <div class="person p8"></div>
+    </section>
+  </main>
+
+  </div>
+  <script>
+    const textarea = document.querySelector('#beliefInput');
+    const inviteToggle = document.querySelector('#inviteToggle');
+    const invitePanel = document.querySelector('#invitePanel');
+    const inviteLink = document.querySelector('#inviteLink');
+    const copyLink = document.querySelector('#copyLink');
+    const thoughtField = document.querySelector('.thought-field');
+    const exampleTrack = document.querySelector('.thought-example-track');
+    const thoughtExamples = [
+      "What if Google didn't go IPO? What would Internet look like today?",
+      "Nobody can love anyone forever.",
+      "Should we rapidly expand nuclear power to fight climate change?",
+      "Language is a cage that shapes what you can think of."
+    ];
+    const exampleStep = 24;
+    let currentExample = 0;
+    let inviteActive = false;
+
+    function updateExampleState() {
+      thoughtField.classList.toggle('has-input', Boolean(textarea.value.trim()));
+    }
+
+    function consumeMatrixPrefill() {
+      const prefill = sessionStorage.getItem('manyMinds.matrixPrefill');
+      if (!prefill) return;
+      textarea.value = prefill;
+      sessionStorage.removeItem('manyMinds.matrixPrefill');
+      updateExampleState();
+    }
+
+    function rotateThoughtExample() {
+      currentExample += 1;
+      exampleTrack.classList.remove('no-transition');
+      exampleTrack.style.transform = `translateY(-${currentExample * exampleStep}px)`;
+
+      if (currentExample === thoughtExamples.length) {
+        window.setTimeout(() => {
+          currentExample = 0;
+          exampleTrack.classList.add('no-transition');
+          exampleTrack.style.transform = 'translateY(0)';
+          exampleTrack.getBoundingClientRect();
+          window.requestAnimationFrame(() => exampleTrack.classList.remove('no-transition'));
+        }, 620);
+      }
+    }
+
+    textarea.addEventListener('input', updateExampleState);
+    textarea.addEventListener('focus', () => thoughtField.classList.add('is-focused'));
+    textarea.addEventListener('blur', () => thoughtField.classList.remove('is-focused'));
+    consumeMatrixPrefill();
+    window.setInterval(rotateThoughtExample, 3200);
+
+    function makeInviteLink() {
+      const code = Math.random().toString(36).slice(2, 8);
+      return `${location.origin}${location.pathname}?room=${code}`;
+    }
+
+    inviteToggle.addEventListener('click', () => {
+      inviteActive = !inviteActive;
+      invitePanel.classList.toggle('visible', inviteActive);
+      inviteToggle.classList.toggle('active', inviteActive);
+      inviteToggle.setAttribute('aria-expanded', String(inviteActive));
+      if (inviteActive && !inviteLink.value) {
+        inviteLink.value = makeInviteLink();
+      }
+    });
+
+    async function copyInviteLink() {
+      const link = inviteLink.value || (inviteLink.value = makeInviteLink());
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch (err) {
+        inviteLink.select();
+        document.execCommand('copy');
+      }
+      copyLink.textContent = 'Copied!';
+      copyLink.classList.add('copied');
+      window.setTimeout(() => {
+        copyLink.textContent = 'Copy link';
+        copyLink.classList.remove('copied');
+      }, 1800);
+    }
+
+    copyLink.addEventListener('click', copyInviteLink);
+
+    document.querySelector('.enter').addEventListener('click', () => {
+      const claim = textarea.value.trim() || thoughtExamples[currentExample % thoughtExamples.length];
+      sessionStorage.setItem('manyMinds.mode', inviteActive ? 'invite' : 'single');
+      sessionStorage.setItem('manyMinds.claim', claim);
+      sessionStorage.setItem('manyMinds.atmosphere', 'intellectual');
+      sessionStorage.removeItem('manyMinds.friendClaim');
+      sessionStorage.removeItem('manyMinds.contrast');
+      // Batch 4 buffer page: route through buffer.html which consumes the
+      // /session SSE and shows progressive character cards, then redirects
+      // to room.html once all 5 characters have arrived.
+      window.location.href = 'buffer.html';
+    });
+  </script>
+  <script src="js/theme.js"></script>
+</body>
+</html>
