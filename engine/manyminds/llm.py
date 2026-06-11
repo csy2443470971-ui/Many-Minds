@@ -48,12 +48,26 @@ def _have_key() -> bool:
 # identical). Default (env unset) => Anthropic, exactly as before. classify() is NOT swapped, so
 # room setup (axes/knowledge) stays on the same path as the Haiku runs. Mistral Small is not a
 # reasoning model, so a plain completion IS the "low/none reasoning_effort" baseline (no CoT).
+# DATA-QUALITY (paid-run integrity): a silent None here makes the caller fall back to OFFLINE placeholder
+# text — non-oppositional, and it pollutes a paid transcript invisibly (the seed-23 run was 19/24 offline =
+# invalid, undetected until audited). So on a transient rate-limit (429) or 5xx, RETRY with backoff (honoring
+# Retry-After; Mistral enforces RPS + tokens/min + tokens/month independently), and on a terminal failure
+# record WHY in `_MISTRAL_LAST_ERROR` so the harness can tell a recoverable 429 from an exhausted monthly
+# quota and refuse to analyze a contaminated run. Anthropic path untouched.
+_MISTRAL_LAST_ERROR: Optional[str] = None   # set per call: None = ok; "HTTP 429" / "HTTP 401" / "no key" / etc.
+
+
 def _mistral_generate(system: str, user: str, max_tokens: int) -> Optional[str]:
+    import time
+    import urllib.error
     import urllib.request
+    global _MISTRAL_LAST_ERROR
     key = os.environ.get("MISTRAL_API_KEY")
     if not key:
+        _MISTRAL_LAST_ERROR = "no key"
         return None
     model = os.environ.get("MM_MISTRAL_MODEL", "mistral-small-latest")
+    interval = float(os.environ.get("MM_MISTRAL_INTERVAL", "0") or 0)   # opt-in per-call spacing (s); harness sets it
     body = json.dumps({
         "model": model,
         "max_tokens": max_tokens,
@@ -63,12 +77,29 @@ def _mistral_generate(system: str, user: str, max_tokens: int) -> Optional[str]:
     req = urllib.request.Request(
         "https://api.mistral.ai/v1/chat/completions", data=body, method="POST",
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        return (data["choices"][0]["message"]["content"] or "").strip() or None
-    except Exception:
-        return None
+    if interval > 0:
+        time.sleep(interval)
+    for attempt in range(4):                       # 1 try + up to 3 retries on transient errors
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            _MISTRAL_LAST_ERROR = None
+            return (data["choices"][0]["message"]["content"] or "").strip() or None
+        except urllib.error.HTTPError as e:
+            _MISTRAL_LAST_ERROR = f"HTTP {e.code}"
+            if e.code in (429, 500, 502, 503, 504) and attempt < 3:
+                ra = e.headers.get("Retry-After")
+                wait = float(ra) if (ra and ra.replace(".", "", 1).isdigit()) else 2.0 ** attempt
+                time.sleep(wait)
+                continue
+            return None                             # 4xx (401/403/quota) or retries exhausted -> terminal
+        except Exception as e:                      # network / timeout / decode
+            _MISTRAL_LAST_ERROR = type(e).__name__
+            if attempt < 3:
+                time.sleep(2.0 ** attempt)
+                continue
+            return None
+    return None
 
 
 def classify(system: str, user: str, route: str) -> Optional[dict]:
