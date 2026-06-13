@@ -1,10 +1,10 @@
-"""Adapter: composer cast -> the frontend's character shape.
+"""Adapter: a backend's cast -> the frontend's character shape.
 
 The web frontend (``static/js/*.js``) expects each character as
 ``{id, name, stance, is_user, is_host, claim_stance, personal_stakes}`` plus a
 ``user`` seat. A backend's ``compose()`` returns a ``ComposerState`` whose
-``state.cast`` entries carry the routing keys (``core_id / core_family / niche /
-tier / gate``) and may additionally carry display fields
+``state.cast`` entries carry seat keys (``core_id / core_kind / role / tier /
+gate``) and may additionally carry display fields
 (``name / stance_label / claim_stance / personal_stakes``).
 
 This adapter is backend-agnostic: it reads display fields straight off each cast
@@ -33,7 +33,7 @@ def cast_to_characters(state: ComposerState) -> list[dict]:
             "id": entry["core_id"],
             "core_id": entry["core_id"],
             "name": entry.get("name") or _FALLBACK_NAMES[i % len(_FALLBACK_NAMES)],
-            "stance": entry.get("stance_label") or entry.get("niche", ""),
+            "stance": entry.get("stance_label") or entry.get("role", ""),
             "is_user": False,
             "is_host": i == 0,                 # first seat hosts
             "claim_stance": (entry.get("claim_stance") or "")[:200],

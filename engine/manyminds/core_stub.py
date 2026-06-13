@@ -9,12 +9,11 @@ the frontend, then the dialogue advances turn by turn until it closes.
 
 What this is NOT
 ----------------
-There are **no real character cores, no first-principle/wound schema, no prompt
-engineering, no casting logic, and no conductor** here. Those are the private
-engine. The three voices below are deliberately generic and obviously canned —
-an optimist, a skeptic, and a pragmatist that template the user's belief into
-flat, scripted lines. Nothing here reflects how the real product makes a room
-move.
+There is **no real character design, no prompt engineering, and none of the
+logic that makes a real room move** here. That is the private engine. The three
+voices below are deliberately generic and obviously canned — an optimist, a
+skeptic, and a pragmatist that template the user's belief into flat, scripted
+lines. Nothing here reflects how the real product works.
 
 Swapping in the real engine: see ``core_interface.py`` — it binds a private
 backend if one is importable, otherwise it falls back to this stub.
@@ -29,15 +28,15 @@ from manyminds.state import ComposerState  # public state container (kept shell 
 
 
 # --------------------------------------------------------------------------- #
-# Toy "voices" — a display name + a generic stance + canned, templated lines.
-# This is NOT the Core schema. There is no first principle, wound, or routing
-# affinity here — just enough to render three obviously-fake demo speakers.
+# Toy "voices" — a display name + a generic posture + canned, templated lines.
+# These are not real characters; just enough to render three obviously-fake
+# demo speakers.
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class _DemoVoice:
     cid: str
     name: str
-    stance: str               # shown in the UI as the speaker's role/stance
+    role: str                 # shown in the UI as the speaker's stance/role
     angle: str                # one-line generic posture toward any belief
     lines: tuple[str, ...]    # canned follow-ups, cycled per turn
 
@@ -71,9 +70,9 @@ _MAX_TURNS = 6
 
 
 # --------------------------------------------------------------------------- #
-# compose() — build a toy ComposerState. Mirrors the SHAPE of the real
-# pipeline (input -> axes -> a small cast) with trivial, transparent logic so
-# the architecture is visible end-to-end. No real classification or casting.
+# compose() — build a toy ComposerState. Shows the SHAPE of the flow
+# (input -> a small seated room) with trivial, transparent logic so the
+# architecture is visible end-to-end. No real composition.
 # --------------------------------------------------------------------------- #
 def _toy_axes(belief: str) -> dict:
     t = belief.lower()
@@ -87,46 +86,41 @@ def _toy_axes(belief: str) -> dict:
 def compose(belief: str, **_ignored) -> ComposerState:
     """Return a ComposerState seating the three demo voices.
 
-    The real engine classifies the input and casts cores by routing logic; this
-    stub just seats the same three demo voices every time and tags the state
-    with trivial values so the downstream shell (adapter, demo.py) has data to
-    render. It is intentionally input-insensitive beyond a toy axis check.
+    The stub seats the same three voices every time and tags the state with
+    trivial values so the downstream shell (adapter, demo) has data to render.
+    It is intentionally input-insensitive beyond a toy axis check.
     """
     state = ComposerState(raw_input=belief)
     state.axes = _toy_axes(belief)            # type: ignore[assignment]
-    state.walton = "discovery"                # fixed; the real classifier is private
-    state.stakes = "information"
-    state.user_role = "explorer"
-    state.niches = [{"niche": v.stance, "source": "topic"} for v in DEMO_VOICES]  # type: ignore[misc]
-    # Cast entries carry the CastEntry keys PLUS display fields the adapter reads.
+    # Cast entries carry the seat keys PLUS display fields the adapter reads.
     state.cast = [
         {
             "core_id": v.cid,
-            "core_family": "demo",
-            "niche": v.stance,
+            "core_kind": "demo",
+            "role": v.role,
             "tier": "allow",
             "gate": None,
-            # display fields (stub backend supplies these; real engine supplies its own)
+            # display fields (stub supplies these; a real backend supplies its own)
             "name": v.name,
-            "stance_label": v.stance,
+            "stance_label": v.role,
             "claim_stance": f"({v.name} — demo stub voice; {v.angle})",
             "personal_stakes": "(public demo stub — no real persona)",
         }
         for v in DEMO_VOICES
     ]
-    state.log("[stub] PUBLIC DEMO STUB backend — real composer/casting is the private engine")
+    state.log("[stub] PUBLIC DEMO STUB backend — the real engine is private")
     return state
 
 
 def background_for(axes: Optional[dict]) -> str:
-    """The real engine surfaces a knowledge background here; the stub has none."""
+    """A real backend may surface a knowledge background here; the stub has none."""
     return ""
 
 
 # --------------------------------------------------------------------------- #
 # DialogueRoom — a canned, deterministic turn engine. Round-robins the demo
 # voices, templates the belief / user input into flat lines, then closes after
-# a fixed number of turns. No model call, no conductor, no routing.
+# a fixed number of turns. No model call; the real turn engine is private.
 # --------------------------------------------------------------------------- #
 class DialogueRoom:
     def __init__(self, characters: list[dict], belief: str,

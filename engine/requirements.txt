@@ -1,9 +1,7 @@
-# Architecture gate runs with ZERO dependencies (offline heuristic classifiers).
-# Optional: real NODE 1/2 classifiers via the cheap model (spec §8e).
-anthropic>=0.40.0   # optional — only needed when ANTHROPIC_API_KEY is set
-# NOT langgraph: pipeline is plain state->state composition (see README decision 1).
+# The shell runs offline on the demo stub. anthropic is OPTIONAL — only used when
+# ANTHROPIC_API_KEY is set (e.g. for the optional bridge-prompt helper).
+anthropic>=0.40.0
 
-# Web layer (v0) only — the composer/gate itself needs neither.
-# Serves the frontend + /session (SSE) + /turn (manyminds/web/server.py).
+# Web layer: serves the frontend + /session (SSE) + /turn.
 fastapi>=0.110.0
 uvicorn>=0.29.0

@@ -1,14 +1,12 @@
-"""FastAPI web layer for manyminds (v0).
+"""FastAPI web layer for the Many Minds shell.
 
-Two endpoints + a static mount, ported from the legacy ``prompts/app.py`` HTTP
-layer but rewired onto the NEW composer (``manyminds.pipeline.compose``) and the
-minimal dialogue layer (``manyminds.dialogue.DialogueRoom``):
+Two endpoints + a static mount, wired to the backend through ``core_interface``:
 
   POST /session  (SSE)  belief/atmosphere -> stage / character* / ready (or error)
   POST /turn            session_id [+ user_input] -> one dialogue turn (+ closing)
-  GET  /<static>        the moved frontend (index.html, room.html, css, js, ...)
+  GET  /<static>        the frontend (index.html, room.html, css, js, ...)
 
-Run from the OUTER ``manyminds/`` project dir:
+Run from the ``engine/`` project dir:
 
     uvicorn manyminds.web.server:fastapi_app --port 8000
     # then open http://127.0.0.1:8000/index.html
@@ -17,9 +15,7 @@ or simply:
 
     python -m manyminds.web.server          # uvicorn on 127.0.0.1:8000
 
-No API key required to run: the composer falls back to its offline heuristic
-classifiers and the dialogue layer to offline placeholder lines. Set
-ANTHROPIC_API_KEY for real NODE 1/2 classification and real turns.
+No API key required: the public demo stub backs everything offline.
 """
 
 from __future__ import annotations
@@ -143,7 +139,7 @@ async def create_session(req: SessionRequest):
             session_id = uuid.uuid4().hex[:12]
             _SESSIONS[session_id] = {
                 "room": room, "characters": characters, "belief": req.belief,
-                "axes": state.axes,   # which §8e axes fired (observability / eval)
+                "axes": state.axes,   # axes the backend tagged (diagnostic)
             }
             yield _sse("ready", {
                 "session_id": session_id,
