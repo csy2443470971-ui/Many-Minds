@@ -51,3 +51,36 @@ legacy/
 
 # 产品官网单独托管，不进 GitHub
 website/
+
+# ============================================================
+#  🔒 MOAT — 差异化设计逻辑 / 角色设计哲学，永不进入公开仓库（预防性 add-guard）
+#  main 现已无任何 moat 文件；此段仅防止将来误把 moat 文件 add 进公开分支。
+#  路径按真实 engine/ 嵌套锚定（裸文件名/含斜杠的相对名在多层目录下
+#  会被 git 锚定到仓库根而失效，故全部用 engine/... 显式路径）。
+# ============================================================
+
+# 核心引擎 moat 模块
+engine/manyminds/cores.py
+engine/manyminds/personas.py
+engine/manyminds/conductor.py
+engine/manyminds/dialogue.py
+engine/manyminds/subview_engine.py
+engine/manyminds/subview_composer.py
+engine/manyminds/backchannel.py
+engine/manyminds/registers.py
+engine/manyminds/niches.py
+engine/manyminds/knowledge.py
+engine/manyminds/grounding.py
+engine/manyminds/orchestrator/turn_prompt.py
+
+# 角色卡 / 标定数据
+engine/manyminds/data/casting_*.json
+engine/manyminds/data/casting_exemplar.json
+engine/manyminds/data/polarity_calib_*.json
+
+# 设计哲学文档（最深 moat）
+engine/emerge-redesign.md
+engine/material-grounding-design.md
+
+# 付费实验 / 引擎驱动脚本（整目录）
+engine/scripts/
