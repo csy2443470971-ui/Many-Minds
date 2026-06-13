@@ -15,24 +15,29 @@ angles you wouldn't have found on your own.
 
 ## What's in this repo
 
+This is the open **architecture shell**. It runs end to end out of the box on a
+public demo stub — a real room lifecycle, streaming transport, turn loop, and
+closing summary — so you can see the framework work with three placeholder voices.
+
+The layer that makes the characters genuinely irreducible — the character core
+design, the casting logic, the conductor that governs how a room moves — is
+closed. The shell binds a private engine when present and falls back to the demo
+stub when it isn't.
+
 | Folder | What it is |
 |--------|-----------|
-| [`engine/`](engine/) | The **engine** — a Python character composer plus a small web layer that streams a composed room and advances the dialogue turn by turn. |
-| [`website/`](website/) | The **marketing site** — the public landing page (`website-final/`). |
-
-For engine details — how the composer is built, what's done, and the honest
-gaps — see [`engine/README.md`](engine/README.md).
+| [`engine/`](engine/) | The **architecture shell** — a Python pipeline plus a small web layer that streams a composed room and advances the dialogue turn by turn, running on a public demo stub. |
 
 ---
 
-## Quick start (engine)
+## Quick start
 
 Requires Python 3.10+.
 
 ```bash
 cd engine
 
-# 1. Create an isolated environment and install web dependencies
+# 1. Create an isolated environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate           # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -45,28 +50,28 @@ uvicorn manyminds.web.server:fastapi_app --port 8000
 # then open http://127.0.0.1:8000/index.html
 ```
 
-The composer runs **offline** out of the box. To switch the classifiers and
-dialogue turns to live models, provide an API key (see below) — never commit it.
-
-### API keys
-
-The engine optionally calls hosted models. Keys are read from a local
-`.env.local` file inside `engine/` and are **never** committed to git:
-
-```bash
-# engine/.env.local   (this file is gitignored)
-ANTHROPIC_API_KEY=your-key-here
-MISTRAL_API_KEY=your-key-here
-```
+The shell runs **offline** out of the box with placeholder characters. No API key
+is needed to see the architecture work.
 
 ---
 
 ## Status
 
-Early stage / work in progress. The engine currently implements the composition
-("architecture") layer with a minimal dialogue layer on top; see
-[`manyminds/README.md`](manyminds/README.md) for the precise state and known
-gaps.
+Early stage / work in progress. This repo is the open architecture shell. The
+differentiating engine — character cores, casting, conductor, grounding — is
+developed privately and not included here.
+
+## Roadmap
+
+The next phase distills the validated character design into a dedicated
+fine-tuned model, moving the irreducibility that is presently orchestrated
+through prompts into the weights themselves. This is post-funding work — it needs
+training resources and data scale, not more design.
+
+## Talk
+
+If you want to understand the character design philosophy in depth, or discuss
+working together, reach out.
 
 ## License
 
