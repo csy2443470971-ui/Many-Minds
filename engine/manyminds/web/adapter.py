@@ -2,57 +2,47 @@
 
 The web frontend (``static/js/*.js``) expects each character as
 ``{id, name, stance, is_user, is_host, claim_stance, personal_stakes}`` plus a
-``user`` seat. The composer (NODE 4) emits only ``CastEntry``
-(``core_id / core_family / niche / tier / gate``) — no display name, no frontend
-stance vocabulary, no user/host seat.
+``user`` seat. A backend's ``compose()`` returns a ``ComposerState`` whose
+``state.cast`` entries carry the routing keys (``core_id / core_family / niche /
+tier / gate``) and may additionally carry display fields
+(``name / stance_label / claim_stance / personal_stakes``).
 
-v0 STUBS the missing display fields (per the decision to stub rather than extend
-the composer): names are placeholders, ``stance`` shows the functional niche, and
-the real Core's first principle / formative wound are surfaced as
-``claim_stance`` / ``personal_stakes`` when the Core is fully written. Replacing
-these stubs with composer-emitted fields is a later task and changes nothing
-here but the field sources.
+This adapter is backend-agnostic: it reads display fields straight off each cast
+entry, falling back to placeholders when a backend doesn't supply them. It does
+NOT import any engine module — the differentiating logic stays out of the shell.
 """
 
 from __future__ import annotations
 
-from manyminds.cores import CORE_POOL
 from manyminds.state import ComposerState
 
-_CORE_BY_ID = {c.core_id: c for c in CORE_POOL}
+# Fallback display names when a backend's cast entries omit ``name``.
+_FALLBACK_NAMES = ["Ada", "Bo", "Cy", "Dane", "Ela", "Finn"]
 
-# STUB display names — the composer does not emit names yet (placeholder pool).
-_STUB_NAMES = ["Ada", "Bo", "Cy", "Dane", "Ela", "Finn"]
-
-# room.html has 5 AI seats (one is the host); cap so extra cores don't fall
+# room.html has 5 AI seats (one is the host); cap so extra entries don't fall
 # off-screen. Fewer than 5 is fine — unused seats hide themselves.
 _MAX_AI = 5
 
 
 def cast_to_characters(state: ComposerState) -> list[dict]:
-    """Return ``[user, ai...]`` in the frontend's character shape (stubbed
-    display fields)."""
+    """Return ``[user, ai...]`` in the frontend's character shape, reading
+    display fields off each cast entry (placeholders when absent)."""
     ai: list[dict] = []
     for i, entry in enumerate(state.cast[:_MAX_AI]):
-        core = _CORE_BY_ID.get(entry["core_id"])
-        if core is not None and not getattr(core, "stub", False):
-            claim, stakes = core.first_principle, core.formative_wound
-        else:
-            claim, stakes = "(stub Core — full persona not written yet)", "(stub)"
         ai.append({
             "id": entry["core_id"],
             "core_id": entry["core_id"],
-            "name": _STUB_NAMES[i % len(_STUB_NAMES)],   # STUB
-            "stance": entry["niche"],                     # STUB: niche shown as stance
+            "name": entry.get("name") or _FALLBACK_NAMES[i % len(_FALLBACK_NAMES)],
+            "stance": entry.get("stance_label") or entry.get("niche", ""),
             "is_user": False,
-            "is_host": i == 0,                            # STUB: first seat hosts
-            "claim_stance": claim[:200],
-            "personal_stakes": stakes[:200],
-            "tier": entry["tier"],
-            "gate": entry["gate"],
+            "is_host": i == 0,                 # first seat hosts
+            "claim_stance": (entry.get("claim_stance") or "")[:200],
+            "personal_stakes": (entry.get("personal_stakes") or "")[:200],
+            "tier": entry.get("tier", "allow"),
+            "gate": entry.get("gate"),
         })
     user = {
-        "id": "user", "core_id": None, "name": "You",     # STUB display name
+        "id": "user", "core_id": None, "name": "You",
         "stance": "", "is_user": True, "is_host": False,
         "claim_stance": "", "personal_stakes": "",
     }

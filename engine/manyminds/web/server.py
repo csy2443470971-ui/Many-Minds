@@ -42,8 +42,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from manyminds.pipeline import compose
-from manyminds.dialogue import DialogueRoom
-from manyminds.knowledge import background_for
+from manyminds.core_interface import DialogueRoom, background_for, BACKEND
 from manyminds.llm import generate
 from manyminds.web.adapter import cast_to_characters
 
@@ -216,7 +215,10 @@ fastapi_app.mount("/", StaticFiles(directory=str(_STATIC_DIR), html=True), name=
 
 def main() -> None:
     import uvicorn
-    print("ManyMinds web (v0) -> http://127.0.0.1:8000/index.html")
+    print(f"ManyMinds web (v0) — backend: {BACKEND} -> http://127.0.0.1:8000/index.html")
+    if BACKEND == "public-demo-stub":
+        print("  NOTE: running the PUBLIC DEMO STUB (toy voices, canned turns). "
+              "The real engine is private.")
     uvicorn.run(fastapi_app, host="127.0.0.1", port=8000, log_level="info")
 
 
